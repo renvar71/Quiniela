@@ -123,25 +123,34 @@ def get_prediccion_status(user_id, partido_id, fecha_partido):
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
 
-    # comparar directamente
     cur.execute("""
-        SELECT 1 FROM predicciones
-        WHERE usuario_id = ? AND partido_id = ? AND fecha_partido = ?
-    """, (user_id, partido_id, fecha_partido))
-    exists = cur.fetchone()
+        SELECT fecha_partido FROM predicciones
+        WHERE usuario_id = ? AND partido_id = ?
+    """, (user_id, partido_id))
+    row = cur.fetchone()
     conn.close()
 
-    if exists:
+    if row:
+        db_fecha = row[0]
+        if db_fecha:
+            try:
+                partido_dt = datetime.fromisoformat(db_fecha)
+                if datetime.now() >= partido_dt - timedelta(minutes=1):
+                    return "🔴 Expirada"
+                else:
+                    return "🟢 Registrada"
+            except ValueError:
+                return "🟢 Registrada"
         return "🟢 Registrada"
 
+    # si no hay registro
     if fecha_partido:
         try:
             partido_dt = datetime.fromisoformat(fecha_partido)
             if datetime.now() >= partido_dt - timedelta(minutes=1):
                 return "🔴 Expirada"
         except ValueError:
-            # si la fecha no está en formato ISO
-            return "🟡 Pendiente"
+            pass
 
     return "🟡 Pendiente"
 
