@@ -3,17 +3,16 @@ import os
 import hashlib
 from datetime import datetime, timedelta
 
-DB = "/mnt/data/quiniela.db"  # path persistente
+DB = "/mnt/data/quiniela.db"  # persistente
 
 def create_database():
-    # Crear carpeta solo si hay ruta de carpeta
     folder = os.path.dirname(DB)
-    if folder:
+    if folder and folder != "/mnt/data":   # evitar intentar crear la carpeta raíz
         os.makedirs(folder, exist_ok=True)
 
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
-
+    
     cur.executescript("""
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,6 +72,7 @@ def create_database():
 
     conn.commit()
     conn.close()
+
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
