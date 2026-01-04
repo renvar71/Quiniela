@@ -19,8 +19,6 @@ st.set_page_config(initial_sidebar_state="collapsed")
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-load_login()   # 👈 restaura sesión si hay cookie
-
 # -------------------------
 # AUTH HELPERS
 # -------------------------
