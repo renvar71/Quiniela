@@ -117,6 +117,18 @@ if future_dates:
     current_week = min([w for d, w in future_dates])
 else:
     current_week = max([p[1] for p in partidos]) if partidos else None
+    
+# -------------------------
+# CSS GLOBAL PARA TABLAS
+# -------------------------
+st.markdown("""
+<style>
+table {width: 100%; border-collapse: collapse;}
+th, td {text-align: center; padding: 6px; font-size: 14px;}
+th {font-weight: bold; background-color: #f0f0f0; color: #000;}  /* color negro para los títulos */
+td img {display: block; margin: 0 auto;}
+</style>
+""", unsafe_allow_html=True)
 
 # ======================================================
 # RESULTADOS SEMANA ANTERIOR
