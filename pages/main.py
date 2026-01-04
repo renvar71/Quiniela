@@ -153,28 +153,24 @@ partidos_next.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
 
 data_next = []
 for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos_next:
+    # Convertir fecha a formato YYYY-MM-DD para comparar con DB
+    if fecha:
+        try:
+            fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
+            fecha_db = datetime.fromisoformat(fecha).strftime("%Y-%m-%d")
+        except ValueError:
+            fecha_fmt = "To be defined"
+            fecha_db = None
+    else:
+        fecha_fmt = "To be defined"
+        fecha_db = None
+
+    # Evaluar estado según los 3 casos
     estado = get_prediccion_status(
         st.session_state.user,
         partido_id,
-        fecha
+        fecha_db
     )
-
-if fecha:
-    try:
-        fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
-        fecha_db = datetime.fromisoformat(fecha).strftime("%Y-%m-%d")  # formato para DB
-    except ValueError:
-        fecha_fmt = "To be defined"
-        fecha_db = None
-else:
-    fecha_fmt = "To be defined"
-    fecha_db = None
-
-estado = get_prediccion_status(
-    st.session_state.user,
-    partido_id,
-    fecha_db
-)
 
     data_next.append({
         "Fecha": fecha_fmt,
