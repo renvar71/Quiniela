@@ -1,13 +1,15 @@
 import sqlite3
 import os
 import hashlib
+from datetime import datetime
 
 DB = os.path.join(os.path.dirname(__file__), "data", "quiniela.db")
 
 def create_database():
     os.makedirs(os.path.dirname(DB), exist_ok=True)
     conn = sqlite3.connect(DB)
-    
+    cur = conn.cursor()  # <--- esto faltaba
+
     cur.executescript("""
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,15 +19,14 @@ def create_database():
         fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS equipos(
+    CREATE TABLE IF NOT EXISTS equipos (
         team_id TEXT PRIMARY KEY,
         nombre TEXT NOT NULL,
         badge_url TEXT,
         logo_url TEXT
     );
 
-
-   CREATE TABLE IF NOT EXISTS partidos(
+    CREATE TABLE IF NOT EXISTS partidos (
         partido_id INTEGER PRIMARY KEY AUTOINCREMENT,
         external_id TEXT UNIQUE,
         semana INTEGER NOT NULL,
@@ -40,7 +41,6 @@ def create_database():
         FOREIGN KEY(equipo_visitante_id) REFERENCES equipos(team_id)
     );
 
-
     CREATE TABLE IF NOT EXISTS predicciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario_id INTEGER NOT NULL,
@@ -54,7 +54,7 @@ def create_database():
         fecha_prediccion DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(usuario_id, partido_id)
     );
-                      
+
     CREATE TABLE IF NOT EXISTS puntajes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario_id TEXT NOT NULL,
@@ -63,10 +63,7 @@ def create_database():
         puntos INTEGER NOT NULL,
         fecha_calculo DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(usuario_id, partido_id)
-    
     );
-
-
     """)
 
     conn.commit()
@@ -112,7 +109,6 @@ def save_puntaje(usuario_id, partido_id, semana, puntos):
     conn.commit()
     conn.close()
 
-
 def has_prediccion(usuario_id, partido_id):
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
@@ -139,7 +135,6 @@ def get_prediccion_status(user_id, partido_id, fecha):
     if exists:
         return "🟢 Registrada"
 
-    from datetime import datetime
     if fecha and datetime.fromisoformat(fecha) < datetime.now():
         return "🔴 Expirada"
 
