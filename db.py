@@ -3,7 +3,9 @@ import os
 import hashlib
 from datetime import datetime, timedelta
 
-DB = os.path.join(os.path.dirname(__file__), "data", "quiniela.db")
+#DB = os.path.join(os.path.dirname(__file__), "data", "quiniela.db")
+DB = "/mnt/data/quiniela.db"
+
 
 def create_database():
     os.makedirs(os.path.dirname(DB), exist_ok=True)
