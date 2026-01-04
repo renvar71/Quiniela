@@ -2,12 +2,12 @@ import sqlite3
 import os
 import hashlib
 
-DB = "/Users/re.v/Documents/quiniela/quiniela.db"
+DB = os.path.join(os.path.dirname(__file__), "data", "quiniela.db")
 
 def create_database():
+    os.makedirs(os.path.dirname(DB), exist_ok=True)
     conn = sqlite3.connect(DB)
-    cur = conn.cursor()
-
+    
     cur.executescript("""
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
