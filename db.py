@@ -1,7 +1,7 @@
 import sqlite3
 import os
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 
 DB = os.path.join(os.path.dirname(__file__), "data", "quiniela.db")
 
@@ -40,7 +40,7 @@ def create_database():
         FOREIGN KEY(equipo_local_id) REFERENCES equipos(team_id),
         FOREIGN KEY(equipo_visitante_id) REFERENCES equipos(team_id)
     );
-
+    
     CREATE TABLE IF NOT EXISTS predicciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario_id INTEGER NOT NULL,
@@ -52,8 +52,10 @@ def create_database():
         line_over_under TEXT,
         extra_question TEXT,
         fecha_prediccion DATETIME DEFAULT CURRENT_TIMESTAMP,
+        fecha_partido TEXT NOT NULL,
         UNIQUE(usuario_id, partido_id)
     );
+
 
     CREATE TABLE IF NOT EXISTS puntajes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,16 +87,22 @@ def get_partidos(semana=None):
     conn.close()
     return rows
 
-def save_prediccion(user_id, partido_id, semana, pick, score_local=None, score_away=None, line_over_under=None, extra_question=None):
+def save_prediccion(user_id, partido_id, semana, fecha_del_partido, pick, score_local=None, score_away=None, line_over_under=None, extra_question=None):
     conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    cur = conn.cursor()  # faltaba definir cur
     cur.execute("""
-        INSERT OR REPLACE INTO predicciones (
-            usuario_id, partido_id, semana, pick, score_local, score_away, line_over_under, extra_question
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (user_id, partido_id, semana, pick, score_local, score_away, line_over_under, extra_question))
+        INSERT INTO predicciones (
+            usuario_id, partido_id, semana, pick, score_local, score_away,
+            line_over_under, extra_question, fecha_partido
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        user_id, partido_id, semana, pick, score_local, score_away,
+        line_over_under, extra_question, fecha_del_partido
+    ))
+
     conn.commit()
     conn.close()
+
     
 def save_puntaje(usuario_id, partido_id, semana, puntos):
     conn = sqlite3.connect(DB)
@@ -120,26 +128,28 @@ def has_prediccion(usuario_id, partido_id):
     conn.close()
     return exists
 
-def get_prediccion_status(user_id, partido_id, fecha):
+def get_prediccion_status(user_id, partido_id, fecha_partido):
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
 
-    # Buscar si hay predicción registrada
     cur.execute("""
         SELECT 1 FROM predicciones
-        WHERE usuario_id = ? AND partido_id = ? AND date(fecha) = ?
-    """, (user_id, partido_id, fecha))
+        WHERE usuario_id = ? AND partido_id = ? AND date(fecha_partido) = ?
+    """, (user_id, partido_id, fecha_partido))
     exists = cur.fetchone()
     conn.close()
 
     if exists:
         return "🟢 Registrada"
 
-    # Si la fecha ya pasó
-    if fecha and datetime.fromisoformat(fecha) < datetime.now():
-        return "🔴 Expirada"
+    if fecha_partido:
+        partido_dt = datetime.fromisoformat(fecha_partido)
+        # restar 1 minuto para marcar expirado justo antes del inicio
+        if datetime.now() >= partido_dt - timedelta(minutes=1):
+            return "🔴 Expirada"
 
     return "🟡 Pendiente"
+
 
 
 
