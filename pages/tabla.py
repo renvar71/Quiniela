@@ -1,6 +1,7 @@
 import streamlit as st
 import sqlite3
 from db import DB
+import pandas as pd
 
 # -------------------------
 # SESSION CHECK
@@ -19,12 +20,12 @@ cur = conn.cursor()
 
 cur.execute("""
     SELECT 
-        u.nombre,
-        SUM(p.puntos) AS total_puntos
-    FROM puntajes p
-    JOIN usuarios u ON u.email = p.usuario_id
+        u.nombre AS Usuario,
+        COALESCE(SUM(p.puntos), 0) AS Puntos
+    FROM usuarios u
+    LEFT JOIN puntajes p ON u.email = p.usuario_id
     GROUP BY u.nombre
-    ORDER BY total_puntos DESC
+    ORDER BY Puntos DESC
 """)
 
 ranking = cur.fetchall()
@@ -33,17 +34,5 @@ conn.close()
 # -------------------------
 # MOSTRAR TABLA
 # -------------------------
-if not ranking:
-    st.info("Aún no hay puntajes calculados")
-else:
-    col1, col2 = st.columns([1, 1])
-
-    col1.markdown("**Usuario**")
-    col2.markdown("**Puntos**")
-
-    st.divider()
-
-    for nombre, puntos in ranking:
-        c1, c2 = st.columns([1, 1])
-        c1.write(nombre)
-        c2.write(int(puntos))
+df = pd.DataFrame(ranking, columns=["Usuario", "Puntos"])
+st.table(df)
