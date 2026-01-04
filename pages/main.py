@@ -91,41 +91,40 @@ conn.close()
 today = date.today()
 
 # -------------------------
-# last week
+# Determinar semana pasada y semana actual
 # -------------------------
 valid_dates = []
-for p in partidos:
-    if p[2]: 
-        try:
-            d = datetime.fromisoformat(p[2]).date()
-            if d < today:
-                valid_dates.append(d)
-        except ValueError:
-            continue
-
-prev_week = max(valid_dates) if valid_dates else None
-
-# -------------------------
-# current_week
-# -------------------------
-valid_current_dates = []
 for p in partidos:
     if p[2]:
         try:
             d = datetime.fromisoformat(p[2]).date()
-            if d >= today:
-                valid_current_dates.append((d, p[1]))
+            if d <= today:  # partidos ya jugados o de hoy
+                valid_dates.append((d, p[1]))
         except ValueError:
             continue
 
-if valid_current_dates:
-    current_week = min([w for d, w in valid_current_dates])
+if valid_dates:
+    prev_week = max([w for d, w in valid_dates])  # última semana con partidos hasta hoy
 else:
-    # Si no hay próxima semana, asumimos que es la última: semana 18
-    current_week = 18
+    prev_week = max([p[1] for p in partidos]) if partidos else None
+
+future_dates = []
+for p in partidos:
+    if p[2]:
+        try:
+            d = datetime.fromisoformat(p[2]).date()
+            if d > today:
+                future_dates.append((d, p[1]))
+        except ValueError:
+            continue
+
+if future_dates:
+    current_week = min([w for d, w in future_dates])
+else:
+    current_week = max([p[1] for p in partidos]) if partidos else None  # última semana
 
 # ======================================================
-# RESULTADOS SEMANA ANTERIOR
+# RESULTADOS SEMANA ANTERIOR (prev_week)
 # ======================================================
 st.subheader(f"Resultados Semana {prev_week}")
 
@@ -141,91 +140,7 @@ with main:
     st.divider()
 
     # Filas
-    for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos:
-        if semana != prev_week:
-            continue
+    partidos_prev = [p for p in partidos if p[1] == prev_week]
+    partidos_prev.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
 
-        home_score, away_score = get_match_result(partido_id)
-
-        if home_score is None or away_score is None:
-            resultado = "Sin resultado"
-            home_wins = away_wins = False
-        else:
-            resultado = f"{home_score} - {away_score}"
-            home_wins = int(home_score) > int(away_score)
-            away_wins = int(away_score) > int(home_score)
-
-        c0, c1, c2, c3, c4 = st.columns([0.5, 1, 1, 1, 0.5])
-
-        with c0:
-            if home_wins:
-                st.markdown("✅")
-
-        with c1:
-            if home_badge:
-                st.image(home_badge, width=40)
-
-        with c2:
-            st.markdown(f"<div class='centered-row'>{resultado}</div>", unsafe_allow_html=True)
-
-        with c3:
-            if away_badge:
-                st.image(away_badge, width=40)
-
-        with c4:
-            if away_wins:
-                st.markdown("✅")
-
-# ======================================================
-# PRÓXIMOS PARTIDOS
-# ======================================================
-st.subheader(f"Próximos partidos Semana {current_week}")
-
-main, _ = st.columns([1, 2])
-
-with main:
-    # Headers
-    h0, h1, h2, h3, h4 = st.columns([1, 1, 0.5, 1, 1])
-    h0.markdown("<div class='table-header'>Fecha</div>", unsafe_allow_html=True)
-    h1.markdown("<div class='table-header'>Local</div>", unsafe_allow_html=True)
-    h3.markdown("<div class='table-header'>Visitante</div>", unsafe_allow_html=True)
-    h4.markdown("<div class='table-header'>Predicción</div>", unsafe_allow_html=True)
-
-    st.divider()
-
-    # Filas
-    for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos:
-        if semana != current_week:
-            continue
-
-        estado = get_prediccion_status(
-            st.session_state.user,
-            partido_id,
-            fecha
-        )
-
-        c0, c1, c2, c3, c4 = st.columns([1, 1, 0.5, 1, 1])
-
-        with c0:
-            if fecha:
-                try:
-                    fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
-                except ValueError:
-                    fecha_fmt = "To be defined"
-            else:
-                fecha_fmt = "To be defined"
-            st.markdown(f"<div class='centered-row'>{fecha_fmt}</div>", unsafe_allow_html=True)
-
-        with c1:
-            if home_badge:
-                st.image(home_badge, width=40)
-
-        with c2:
-            st.markdown("<div class='centered-row'>vs</div>", unsafe_allow_html=True)
-
-        with c3:
-            if away_badge:
-                st.image(away_badge, width=40)
-
-        with c4:
-            st.markdown(f"<div class='centered-row'>{estado}</div>", unsafe_allow_html=True)
+    for partido_id, semana, fecha,_
