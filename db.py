@@ -124,21 +124,24 @@ def get_prediccion_status(user_id, partido_id, fecha):
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
 
+    # Buscar si hay predicción registrada
     cur.execute("""
         SELECT 1 FROM predicciones
-        WHERE usuario_id = ? AND partido_id = ?
-    """, (user_id, partido_id))
-
+        WHERE usuario_id = ? AND partido_id = ? AND date(fecha) = ?
+    """, (user_id, partido_id, fecha))
     exists = cur.fetchone()
     conn.close()
 
     if exists:
         return "🟢 Registrada"
 
+    # Si la fecha ya pasó
     if fecha and datetime.fromisoformat(fecha) < datetime.now():
         return "🔴 Expirada"
 
     return "🟡 Pendiente"
+
+
 
 def get_user_id(email):
     conn = sqlite3.connect(DB)
