@@ -124,9 +124,11 @@ def get_prediccion_status(user_id, partido_id, fecha_partido):
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT fecha_partido FROM predicciones
-        WHERE usuario_id = ? AND partido_id = ?
-    """, (user_id, partido_id))
+    SELECT p.fecha
+    FROM predicciones pr
+    JOIN partidos p ON p.id = pr.partido_id
+    WHERE pr.usuario_id = ? AND pr.partido_id = ?
+""", (user_id, partido_id))
     row = cur.fetchone()
     conn.close()
 
