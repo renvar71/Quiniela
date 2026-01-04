@@ -90,7 +90,9 @@ conn.close()
 
 today = date.today()
 
+# -------------------------
 # last week
+# -------------------------
 valid_dates = []
 for p in partidos:
     if p[2]: 
@@ -103,7 +105,9 @@ for p in partidos:
 
 prev_week = max(valid_dates) if valid_dates else None
 
+# -------------------------
 # current_week
+# -------------------------
 valid_current_dates = []
 for p in partidos:
     if p[2]:
@@ -114,7 +118,12 @@ for p in partidos:
         except ValueError:
             continue
 
-current_week = min([w for d, w in valid_current_dates]) if valid_current_dates else None
+if valid_current_dates:
+    current_week = min([w for d, w in valid_current_dates])
+else:
+    # Si no hay próxima semana, asumimos que es la última: semana 18
+    current_week = 18
+
 # ======================================================
 # RESULTADOS SEMANA ANTERIOR
 # ======================================================
@@ -123,12 +132,15 @@ st.subheader(f"Resultados Semana {prev_week}")
 main, _ = st.columns([1, 2])
 
 with main:
-    h0, h1, h2, h3, h4 = st.columns([0.3, 2, 1, 2, 0.3])
+    # Headers
+    h0, h1, h2, h3, h4 = st.columns([0.5, 1, 1, 1, 0.5])
     h1.markdown("<div class='table-header'>Local</div>", unsafe_allow_html=True)
+    h2.markdown("<div class='table-header'>Resultado</div>", unsafe_allow_html=True)
     h3.markdown("<div class='table-header'>Visitante</div>", unsafe_allow_html=True)
 
     st.divider()
 
+    # Filas
     for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos:
         if semana != prev_week:
             continue
@@ -143,7 +155,7 @@ with main:
             home_wins = int(home_score) > int(away_score)
             away_wins = int(away_score) > int(home_score)
 
-        c0, c1, c2, c3, c4 = st.columns([0.3, 0.9, 1, 0.9, 0.3])
+        c0, c1, c2, c3, c4 = st.columns([0.5, 1, 1, 1, 0.5])
 
         with c0:
             if home_wins:
@@ -172,7 +184,8 @@ st.subheader(f"Próximos partidos Semana {current_week}")
 main, _ = st.columns([1, 2])
 
 with main:
-    h0, h1, h2, h3, h4 = st.columns([2, 2, 0.5, 2, 5])
+    # Headers
+    h0, h1, h2, h3, h4 = st.columns([1, 1, 0.5, 1, 1])
     h0.markdown("<div class='table-header'>Fecha</div>", unsafe_allow_html=True)
     h1.markdown("<div class='table-header'>Local</div>", unsafe_allow_html=True)
     h3.markdown("<div class='table-header'>Visitante</div>", unsafe_allow_html=True)
@@ -180,6 +193,7 @@ with main:
 
     st.divider()
 
+    # Filas
     for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos:
         if semana != current_week:
             continue
@@ -190,10 +204,16 @@ with main:
             fecha
         )
 
-        c0, c1, c2, c3, c4 = st.columns([2, 5, 0.5, 5, 5])
+        c0, c1, c2, c3, c4 = st.columns([1, 1, 0.5, 1, 1])
 
         with c0:
-            fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
+            if fecha:
+                try:
+                    fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
+                except ValueError:
+                    fecha_fmt = "To be defined"
+            else:
+                fecha_fmt = "To be defined"
             st.markdown(f"<div class='centered-row'>{fecha_fmt}</div>", unsafe_allow_html=True)
 
         with c1:
@@ -203,13 +223,9 @@ with main:
         with c2:
             st.markdown("<div class='centered-row'>vs</div>", unsafe_allow_html=True)
 
-
         with c3:
             if away_badge:
                 st.image(away_badge, width=40)
 
         with c4:
             st.markdown(f"<div class='centered-row'>{estado}</div>", unsafe_allow_html=True)
-
-
-        
