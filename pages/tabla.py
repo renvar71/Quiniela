@@ -35,4 +35,19 @@ conn.close()
 # MOSTRAR TABLA
 # -------------------------
 df = pd.DataFrame(ranking, columns=["Usuario", "Puntos"])
+
+# Agregar columna de posición con emojis
+posiciones = []
+for i, puntos in enumerate(df["Puntos"], start=1):
+    if i == 1:
+        posiciones.append(f"🥇 1")
+    elif i == 2:
+        posiciones.append(f"🥈 2")
+    elif i == 3:
+        posiciones.append(f"🥉 3")
+    else:
+        posiciones.append(str(i))
+df.insert(0, "Posición", posiciones)
+
 st.table(df)
+
