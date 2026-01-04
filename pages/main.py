@@ -5,6 +5,7 @@ import requests
 from datetime import datetime, date
 from db import DB, get_prediccion_status
 from api import API_KEY
+import pandas as pd
 
 # -------------------------
 # SESSION CHECK
@@ -32,20 +33,14 @@ with col2:
 st.divider()
 
 # -------------------------
-# CSS
+# CSS GLOBAL PARA TABLAS
 # -------------------------
 st.markdown("""
 <style>
-.centered-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-}
-.table-header {
-    font-weight: bold;
-    text-align: center;
-}
+table {width: 100%; border-collapse: collapse;}
+th, td {text-align: center; padding: 6px; font-size: 14px;}
+th {font-weight: bold; background-color: #f0f0f0;}
+td img {display: block; margin: 0 auto;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -91,20 +86,20 @@ conn.close()
 today = date.today()
 
 # -------------------------
-# Determinar semana pasada y semana actual
+# Determinar prev_week y current_week
 # -------------------------
 valid_dates = []
 for p in partidos:
     if p[2]:
         try:
             d = datetime.fromisoformat(p[2]).date()
-            if d <= today:  # partidos ya jugados o de hoy
+            if d <= today:
                 valid_dates.append((d, p[1]))
         except ValueError:
             continue
 
 if valid_dates:
-    prev_week = max([w for d, w in valid_dates])  # última semana con partidos hasta hoy
+    prev_week = max([w for d, w in valid_dates])
 else:
     prev_week = max([p[1] for p in partidos]) if partidos else None
 
@@ -121,26 +116,64 @@ for p in partidos:
 if future_dates:
     current_week = min([w for d, w in future_dates])
 else:
-    current_week = max([p[1] for p in partidos]) if partidos else None  # última semana
+    current_week = max([p[1] for p in partidos]) if partidos else None
 
 # ======================================================
-# RESULTADOS SEMANA ANTERIOR (prev_week)
+# RESULTADOS SEMANA ANTERIOR
 # ======================================================
 st.subheader(f"Resultados Semana {prev_week}")
 
-main, _ = st.columns([1, 2])
+partidos_prev = [p for p in partidos if p[1] == prev_week]
+partidos_prev.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
 
-with main:
-    # Headers
-    h0, h1, h2, h3, h4 = st.columns([0.5, 1, 1, 1, 0.5])
-    h1.markdown("<div class='table-header'>Local</div>", unsafe_allow_html=True)
-    h2.markdown("<div class='table-header'>Resultado</div>", unsafe_allow_html=True)
-    h3.markdown("<div class='table-header'>Visitante</div>", unsafe_allow_html=True)
+data_prev = []
+for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos_prev:
+    home_score, away_score = get_match_result(partido_id)
+    if home_score is None or away_score is None:
+        resultado = "Sin resultado"
+    else:
+        resultado = f"{home_score} - {away_score}"
 
-    st.divider()
+    data_prev.append({
+        "Local": f'<img src="{home_badge}" width="40">' if home_badge else "",
+        "Resultado": resultado,
+        "Visitante": f'<img src="{away_badge}" width="40">' if away_badge else ""
+    })
 
-    # Filas
-    partidos_prev = [p for p in partidos if p[1] == prev_week]
-    partidos_prev.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
+df_prev = pd.DataFrame(data_prev)
+st.markdown(df_prev.to_html(escape=False, index=False), unsafe_allow_html=True)
 
-    for partido_id, semana, fecha,_
+# ======================================================
+# PRÓXIMOS PARTIDOS
+# ======================================================
+st.subheader(f"Próximos partidos Semana {current_week}")
+
+partidos_next = [p for p in partidos if p[1] == current_week]
+partidos_next.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
+
+data_next = []
+for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos_next:
+    estado = get_prediccion_status(
+        st.session_state.user,
+        partido_id,
+        fecha
+    )
+
+    if fecha:
+        try:
+            fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
+        except ValueError:
+            fecha_fmt = "To be defined"
+    else:
+        fecha_fmt = "To be defined"
+
+    data_next.append({
+        "Fecha": fecha_fmt,
+        "Local": f'<img src="{home_badge}" width="40">' if home_badge else "",
+        "vs": "vs",
+        "Visitante": f'<img src="{away_badge}" width="40">' if away_badge else "",
+        "Predicción": estado
+    })
+
+df_next = pd.DataFrame(data_next)
+st.markdown(df_next.to_html(escape=False, index=False), unsafe_allow_html=True)
