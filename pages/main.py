@@ -159,13 +159,22 @@ for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos_next:
         fecha
     )
 
-    if fecha:
-        try:
-            fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
-        except ValueError:
-            fecha_fmt = "To be defined"
-    else:
+if fecha:
+    try:
+        fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
+        fecha_db = datetime.fromisoformat(fecha).strftime("%Y-%m-%d")  # formato para DB
+    except ValueError:
         fecha_fmt = "To be defined"
+        fecha_db = None
+else:
+    fecha_fmt = "To be defined"
+    fecha_db = None
+
+estado = get_prediccion_status(
+    st.session_state.user,
+    partido_id,
+    fecha_db
+)
 
     data_next.append({
         "Fecha": fecha_fmt,
