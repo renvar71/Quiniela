@@ -90,16 +90,31 @@ conn.close()
 
 today = date.today()
 
-prev_week = max(
-    p[1] for p in partidos
-    if datetime.fromisoformat(p[2]).date() < today
-)
+# last week
+valid_dates = []
+for p in partidos:
+    if p[2]: 
+        try:
+            d = datetime.fromisoformat(p[2]).date()
+            if d < today:
+                valid_dates.append(d)
+        except ValueError:
+            continue
 
-current_week = min(
-    p[1] for p in partidos
-    if datetime.fromisoformat(p[2]).date() >= today
-)
+prev_week = max(valid_dates) if valid_dates else None
 
+# current_week
+valid_current_dates = []
+for p in partidos:
+    if p[2]:
+        try:
+            d = datetime.fromisoformat(p[2]).date()
+            if d >= today:
+                valid_current_dates.append((d, p[1]))
+        except ValueError:
+            continue
+
+current_week = min([w for d, w in valid_current_dates]) if valid_current_dates else None
 # ======================================================
 # RESULTADOS SEMANA ANTERIOR
 # ======================================================
