@@ -75,9 +75,11 @@ SELECT
     equipo_visitante_id,
     home_badge_url,
     away_badge_url,
-    status
+    status,
+    tipo
 FROM partidos
 ORDER BY fecha
+
 """)
 
 partidos = cur.fetchall()
@@ -88,9 +90,10 @@ today = date.today()
 # -------------------------
 # Determinar prev_week y current_week
 # -------------------------
+
 valid_dates = []
 for p in partidos:
-    if p[2]:
+    if p[2] and p[1] is not None:
         try:
             d = datetime.fromisoformat(p[2]).date()
             if d <= today:
@@ -99,13 +102,14 @@ for p in partidos:
             continue
 
 if valid_dates:
-    prev_week = max([w for d, w in valid_dates])
+    prev_week = max(w for d, w in valid_dates)
 else:
-    prev_week = max([p[1] for p in partidos]) if partidos else None
+    prev_week = None
+
 
 future_dates = []
 for p in partidos:
-    if p[2]:
+    if p[2] and p[1] is not None:
         try:
             d = datetime.fromisoformat(p[2]).date()
             if d > today:
@@ -114,10 +118,10 @@ for p in partidos:
             continue
 
 if future_dates:
-    current_week = min([w for d, w in future_dates])
+    current_week = min(w for d, w in future_dates)
 else:
-    current_week = max([p[1] for p in partidos]) if partidos else None
-    
+    current_week = None
+
 # -------------------------
 # CSS GLOBAL PARA TABLAS
 # -------------------------
@@ -133,7 +137,11 @@ td img {display: block; margin: 0 auto;}
 # ======================================================
 # RESULTADOS SEMANA ANTERIOR
 # ======================================================
-st.subheader(f"Resultados Semana {prev_week}")
+if prev_week is not None:
+    st.subheader(f"Resultados Semana {prev_week}")
+else:
+    st.subheader("Resultados recientes")
+
 
 partidos_prev = [p for p in partidos if p[1] == prev_week]
 partidos_prev.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
@@ -158,7 +166,11 @@ st.markdown(df_prev.to_html(escape=False, index=False), unsafe_allow_html=True)
 # ======================================================
 # PRÓXIMOS PARTIDOS
 # ======================================================
-st.subheader(f"Próximos partidos Semana {current_week}")
+if current_week is not None:
+    st.subheader(f"Próximos partidos Semana {current_week}")
+else:
+    st.subheader("Próximos partidos")
+
 
 partidos_next = [p for p in partidos if p[1] == current_week]
 partidos_next.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
