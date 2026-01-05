@@ -6,7 +6,7 @@ from datetime import datetime, date
 from db import DB, get_prediccion_status
 from api import API_KEY
 import pandas as pd
-
+import config
 # -------------------------
 # SESSION CHECK
 # -------------------------
@@ -194,3 +194,17 @@ for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos_next:
 
 df_next = pd.DataFrame(data_next)
 st.markdown(df_next.to_html(escape=False, index=False), unsafe_allow_html=True)
+
+# -------------------------
+# SIDEBAR GLOBAL
+# -------------------------
+st.sidebar.markdown("### 🧪 Modo de prueba")
+
+test_mode = st.sidebar.toggle("Activar TEST MODE", value=False)
+
+config.TEST_MODE = test_mode
+
+if test_mode:
+    st.sidebar.success("TEST MODE ACTIVO")
+else:
+    st.sidebar.info("Modo producción")
