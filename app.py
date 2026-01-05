@@ -1,16 +1,23 @@
 # app.py
 import streamlit as st
 import hashlib
-from db import get_user_id, hash_password, save_prediccion, get_prediccion_status
-from api import save_next_games, save_teams
-from supabase_config import supabase
+from db import (
+    supabase,
+    get_user_id,
+    hash_password,
+)
+from api import save_teams, save_next_games
 
 # -------------------------
-# INICIALIZACIÓN DE DATOS
+# Cargar datos iniciales solo una vez
 # -------------------------
-# Poblar equipos y próximos partidos desde API
-save_teams()
-save_next_games()
+if "data_loaded" not in st.session_state:
+    try:
+        save_teams()
+        save_next_games()
+        st.session_state.data_loaded = True
+    except Exception as e:
+        st.error(f"Error cargando datos iniciales: {e}")
 
 st.set_page_config(initial_sidebar_state="collapsed")
 
@@ -21,35 +28,31 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # -------------------------
-# FUNCIONES DE LOGIN/REGISTRO
+# AUTH HELPERS
 # -------------------------
-def hash_pw(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
 def authenticate_user(email, password):
-    pw_hash = hash_pw(password)
-    res = supabase.table("usuarios").select("id")\
-        .eq("email", email).eq("password_hash", pw_hash).single().execute()
-    return res.data is not None
+    user_id = get_user_id(email)
+    if not user_id:
+        return False
+    # Recuperar password hash desde Supabase
+    res = supabase.table("usuarios").select("password_hash").eq("id", user_id).single().execute()
+    if not res.data:
+        return False
+    return res.data["password_hash"] == hash_password(password)
 
 def add_user(nombre, email, password):
-    pw_hash = hash_pw(password)
     try:
-        supabase.table("usuarios").insert({
+        supabase.table("usuarios").insert([{
             "nombre": nombre,
             "email": email,
-            "password_hash": pw_hash
-        }).execute()
+            "password_hash": hash_password(password)
+        }]).execute()
         return True
-    except:
+    except Exception:
         return False
 
-def logout():
-    st.session_state.logged_in = False
-    st.session_state.user = None
-
 # -------------------------
-# LOGIN / REGISTRO
+# LOGIN / REGISTER
 # -------------------------
 if not st.session_state.logged_in:
 
@@ -75,7 +78,7 @@ if not st.session_state.logged_in:
             else:
                 st.error("Credenciales incorrectas")
 
-    else:  # Crear usuario
+    else:
         nombre = st.text_input("Nombre")
         email = st.text_input("Email")
         password = st.text_input("Contraseña", type="password")
@@ -84,19 +87,26 @@ if not st.session_state.logged_in:
             if add_user(nombre, email, password):
                 st.success("Usuario creado. Ya puedes iniciar sesión.")
             else:
-                st.error("Ese email ya existe")
+                st.error("Ese email ya existe o hubo un error")
 
     st.stop()
 
 # -------------------------
-# POST LOGIN: SIDEBAR Y NAV
+# NAVIGATION (POST LOGIN)
 # -------------------------
 st.sidebar.success(f"Bienvenid@ {st.session_state.user}")
+
+def logout():
+    st.session_state.logged_in = False
+    st.session_state.user = None
 
 if st.sidebar.button("Cerrar sesión"):
     logout()
     st.rerun()
 
+# -------------------------
+# PAGES
+# -------------------------
 pages = [
     st.Page("pages/main.py", title="Inicio"),
     st.Page("pages/tabla.py", title="Tabla"),
@@ -106,6 +116,7 @@ pages = [
 
 pg = st.navigation(pages)
 
+# Ocultar link directo a predicción
 st.markdown("""
 <style>
 a[href*="prediccion_partido"] {
