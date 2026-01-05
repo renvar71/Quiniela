@@ -1,4 +1,3 @@
-# main.py
 import streamlit as st
 import sqlite3
 import requests
@@ -33,14 +32,34 @@ with col2:
 st.divider()
 
 # -------------------------
-# CSS GLOBAL PARA TABLAS
+# CSS GLOBAL PARA TABLAS (FIX DESKTOP)
 # -------------------------
 st.markdown("""
 <style>
-table {width: 100%; border-collapse: collapse;}
-th, td {text-align: center; padding: 6px; font-size: 14px;}
-th {font-weight: bold; background-color: #f0f0f0;}
-td img {display: block; margin: 0 auto;}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+th, td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 6px;
+    font-size: 14px;
+}
+
+th {
+    font-weight: bold;
+    background-color: #f0f0f0;
+    color: #000;
+    white-space: nowrap;
+}
+
+td img {
+    display: block;
+    margin: 0 auto;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -79,7 +98,6 @@ SELECT
     tipo
 FROM partidos
 ORDER BY fecha
-
 """)
 
 partidos = cur.fetchall()
@@ -88,7 +106,7 @@ conn.close()
 today = date.today()
 
 # -------------------------
-# Determinar prev_week y current_week
+# Determinar prev_week
 # -------------------------
 valid_dates = []
 for p in partidos:
@@ -103,12 +121,11 @@ for p in partidos:
         except ValueError:
             continue
 
-if valid_dates:
-    prev_week = max(w for d, w in valid_dates)
-else:
-    prev_week = None
+prev_week = max((w for d, w in valid_dates), default=None)
 
-
+# -------------------------
+# Determinar current_week
+# -------------------------
 future_dates = []
 for p in partidos:
     fecha = p[2]
@@ -122,23 +139,7 @@ for p in partidos:
         except ValueError:
             continue
 
-if future_dates:
-    current_week = min(w for d, w in future_dates)
-else:
-    current_week = None
-
-
-# -------------------------
-# CSS GLOBAL PARA TABLAS
-# -------------------------
-st.markdown("""
-<style>
-table {width: 100%; border-collapse: collapse;}
-th, td {text-align: center; padding: 6px; font-size: 14px;}
-th {font-weight: bold; background-color: #f0f0f0; color: #000;}  /* color negro para los títulos */
-td img {display: block; margin: 0 auto;}
-</style>
-""", unsafe_allow_html=True)
+current_week = min((w for d, w in future_dates), default=None)
 
 # ======================================================
 # RESULTADOS SEMANA ANTERIOR
@@ -148,16 +149,13 @@ if prev_week is not None:
 else:
     st.subheader("Resultados recientes")
 
-
 partidos_prev = [p for p in partidos if p[1] == prev_week]
-partidos_prev.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
+partidos_prev.sort(key=lambda x: x[2] or "9999-12-31")
 
 data_prev = []
 
 for p in partidos_prev:
     partido_id = p[0]
-    semana = p[1]
-    fecha = p[2]
     home_badge = p[5]
     away_badge = p[6]
 
@@ -174,7 +172,6 @@ for p in partidos_prev:
         "Visitante": f'<img src="{away_badge}" width="40">' if away_badge else ""
     })
 
-
 df_prev = pd.DataFrame(data_prev)
 st.markdown(df_prev.to_html(escape=False, index=False), unsafe_allow_html=True)
 
@@ -190,17 +187,16 @@ else:
     ))
 
 partidos_next = [p for p in partidos if p[1] == current_week]
-partidos_next.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
+partidos_next.sort(key=lambda x: x[2] or "9999-12-31")
 
 data_next = []
+
 for p in partidos_next:
     partido_id = p[0]
-    semana = p[1]
     fecha = p[2]
     home_badge = p[5]
     away_badge = p[6]
 
-    # Convertir fecha a formato YYYY-MM-DD para comparar con DB
     if fecha:
         try:
             fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
@@ -212,7 +208,6 @@ for p in partidos_next:
         fecha_fmt = "To be defined"
         fecha_db = None
 
-    # Evaluar estado según los 3 casos
     estado = get_prediccion_status(
         st.session_state.user,
         partido_id,
