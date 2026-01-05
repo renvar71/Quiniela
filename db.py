@@ -1,7 +1,6 @@
 import sqlite3
 import hashlib
 from datetime import datetime, timedelta
-from config import TEST_MODE
 
 DB = "quiniela.db"  # base de datos local en el proyecto
 
@@ -132,10 +131,7 @@ def get_prediccion_status(user_id, partido_id, fecha_partido):
 """, (user_id, partido_id))
     row = cur.fetchone()
     conn.close()
-    
-    if TEST_MODE:
-        return "🟢 Registrada" if exists else "🟡 Pendiente"
-        
+
     if row:
         db_fecha = row[0]
         if db_fecha:
