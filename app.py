@@ -1,15 +1,16 @@
 # app.py
 import streamlit as st
 import hashlib
-from db import create_database, authenticate_user, add_user
+from db import get_user_id, hash_password, save_prediccion, get_prediccion_status
 from api import save_next_games, save_teams
+from supabase_config import supabase
 
 # -------------------------
-# INICIALIZACIÓN DE BASE DE DATOS
+# INICIALIZACIÓN DE DATOS
 # -------------------------
-create_database()       # si usas tablas admin en Supabase
-save_teams()            # poblar equipos desde API
-save_next_games()       # poblar partidos desde API
+# Poblar equipos y próximos partidos desde API
+save_teams()
+save_next_games()
 
 st.set_page_config(initial_sidebar_state="collapsed")
 
@@ -20,7 +21,35 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # -------------------------
-# ACCESS (LOGIN / REGISTER)
+# FUNCIONES DE LOGIN/REGISTRO
+# -------------------------
+def hash_pw(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def authenticate_user(email, password):
+    pw_hash = hash_pw(password)
+    res = supabase.table("usuarios").select("id")\
+        .eq("email", email).eq("password_hash", pw_hash).single().execute()
+    return res.data is not None
+
+def add_user(nombre, email, password):
+    pw_hash = hash_pw(password)
+    try:
+        supabase.table("usuarios").insert({
+            "nombre": nombre,
+            "email": email,
+            "password_hash": pw_hash
+        }).execute()
+        return True
+    except:
+        return False
+
+def logout():
+    st.session_state.logged_in = False
+    st.session_state.user = None
+
+# -------------------------
+# LOGIN / REGISTRO
 # -------------------------
 if not st.session_state.logged_in:
 
@@ -60,13 +89,9 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -------------------------
-# NAVIGATION (POST LOGIN)
+# POST LOGIN: SIDEBAR Y NAV
 # -------------------------
 st.sidebar.success(f"Bienvenid@ {st.session_state.user}")
-
-def logout():
-    st.session_state.logged_in = False
-    st.session_state.user = None
 
 if st.sidebar.button("Cerrar sesión"):
     logout()
