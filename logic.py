@@ -2,15 +2,12 @@ import requests
 import sqlite3
 from db import DB
 from api import API_KEY
-from config import TEST_MODE
-from mock_data import get_mock_match
+
 
 # -------------------------
 # RESULTADO REAL DEL PARTIDO
 # -------------------------
 def fetch_match_result(partido_id):
-    if TEST_MODE:
-        return get_mock_match(partido_id)
     """
     Obtiene marcador final desde TheSportsDB
     """
