@@ -3,6 +3,9 @@ from supabase_config import supabase
 from datetime import datetime, timedelta
 import hashlib
 
+# -------------------------
+# CONSTANTES
+# -------------------------
 WEEK_TITLES = {
     160: "Próximos partidos Ronda Comodines",
     125: "Próximos partidos Ronda Divisional",
@@ -10,19 +13,54 @@ WEEK_TITLES = {
     200: "Próximo partido Super Bowl",
 }
 
+# -------------------------
+# HASH PASSWORD
+# -------------------------
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# ----------------------------
-# Usuarios
-# ----------------------------
+# -------------------------
+# USUARIOS
+# -------------------------
 def get_user_id(email):
     res = supabase.table("usuarios").select("id").eq("email", email).single().execute()
     return res.data["id"] if res.data else None
 
-# ----------------------------
-# Partidos
-# ----------------------------
+def add_user(nombre, email, password):
+    try:
+        supabase.table("usuarios").insert([{
+            "nombre": nombre,
+            "email": email,
+            "password_hash": hash_password(password)
+        }]).execute()
+        return True
+    except Exception:
+        return False
+
+# -------------------------
+# EQUIPOS
+# -------------------------
+def save_team(team_id, nombre, badge_url=None, logo_url=None):
+    """Upsert de un equipo"""
+    supabase.table("equipos").upsert([{
+        "team_id": team_id,
+        "nombre": nombre,
+        "badge_url": badge_url,
+        "logo_url": logo_url
+    }], on_conflict=["team_id"]).execute()
+
+def get_team_badges():
+    """Devuelve un diccionario {team_id: badge_url}"""
+    res = supabase.table("equipos").select("team_id, badge_url").execute()
+    return {t["team_id"]: t["badge_url"] for t in res.data}
+
+# -------------------------
+# PARTIDOS
+# -------------------------
+def save_partido(partido):
+    """Upsert de un partido (dict con campos del partido)"""
+    supabase.table("partidos").upsert([partido], on_conflict=["partido_id"]).execute()
+
 def get_partidos(semana=None):
     query = supabase.table("partidos").select("*").order("fecha", desc=False)
     if semana is not None:
@@ -30,13 +68,13 @@ def get_partidos(semana=None):
     res = query.execute()
     return res.data
 
-# ----------------------------
-# Predicciones
-# ----------------------------
+# -------------------------
+# PREDICCIONES
+# -------------------------
 def save_prediccion(user_id, partido_id, semana, fecha_del_partido,
                     pick, score_local=None, score_away=None,
                     line_over_under=None, extra_question=None):
-    supabase.table("predicciones").insert({
+    supabase.table("predicciones").upsert([{
         "usuario_id": user_id,
         "partido_id": partido_id,
         "semana": semana,
@@ -46,7 +84,7 @@ def save_prediccion(user_id, partido_id, semana, fecha_del_partido,
         "line_over_under": line_over_under,
         "extra_question": extra_question,
         "fecha_partido": fecha_del_partido
-    }).execute()
+    }], on_conflict=["usuario_id", "partido_id"]).execute()
 
 def has_prediccion(usuario_id, partido_id):
     res = supabase.table("predicciones")\
@@ -57,13 +95,13 @@ def has_prediccion(usuario_id, partido_id):
     return len(res.data) > 0
 
 def get_prediccion_status(user_id, partido_id, fecha_partido):
-    # Checar si existe predicción
+    """Devuelve 🟢 Registrada, 🟡 Pendiente o 🔴 Expirada"""
     res = supabase.table("predicciones")\
         .select("fecha_partido")\
         .eq("usuario_id", user_id)\
         .eq("partido_id", partido_id)\
         .single().execute()
-    
+
     if res.data:
         db_fecha = res.data["fecha_partido"]
         if db_fecha:
@@ -88,11 +126,11 @@ def get_prediccion_status(user_id, partido_id, fecha_partido):
 
     return "🟡 Pendiente"
 
-# ----------------------------
-# Puntajes
-# ----------------------------
+# -------------------------
+# PUNTAJES
+# -------------------------
 def save_puntaje(usuario_id, partido_id, semana, puntos):
-    # Insert or update (upsert)
+    """Upsert puntaje"""
     supabase.table("puntajes").upsert([{
         "usuario_id": usuario_id,
         "partido_id": partido_id,
