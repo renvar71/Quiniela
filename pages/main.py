@@ -3,7 +3,7 @@ import streamlit as st
 import sqlite3
 import requests
 from datetime import datetime, date
-from db import DB, get_prediccion_status
+from db import DB, get_prediccion_status, WEEK_TITLES
 from api import API_KEY
 import pandas as pd
 
