@@ -32,7 +32,7 @@ with col2:
 st.divider()
 
 # -------------------------
-# CSS GLOBAL PARA TABLAS (FIX DESKTOP)
+# CSS GLOBAL PARA TABLAS
 # -------------------------
 st.markdown("""
 <style>
@@ -106,43 +106,26 @@ conn.close()
 today = date.today()
 
 # -------------------------
-# Determinar prev_week
+# SEMANA ACTUAL (FIX)
 # -------------------------
-valid_dates = []
-for p in partidos:
-    fecha = p[2]
-    semana = p[1]
-
-    if fecha and semana is not None:
-        try:
-            d = datetime.fromisoformat(fecha).date()
-            if d <= today:
-                valid_dates.append((d, semana))
-        except ValueError:
-            continue
-
-prev_week = max((w for d, w in valid_dates), default=None)
+current_week = max(
+    p[1] for p in partidos
+    if p[1] is not None
+)
 
 # -------------------------
-# Determinar current_week
+# SEMANA PREVIA (para resultados)
 # -------------------------
-future_dates = []
-for p in partidos:
-    fecha = p[2]
-    semana = p[1]
+valid_weeks = [
+    p[1] for p in partidos
+    if p[2] and p[1] is not None
+    and datetime.fromisoformat(p[2]).date() <= today
+]
 
-    if fecha and semana is not None:
-        try:
-            d = datetime.fromisoformat(fecha).date()
-            if d > today:
-                future_dates.append((d, semana))
-        except ValueError:
-            continue
-
-current_week = min((w for d, w in future_dates), default=None)
+prev_week = max(valid_weeks) if valid_weeks else None
 
 # ======================================================
-# RESULTADOS SEMANA ANTERIOR
+# RESULTADOS
 # ======================================================
 if prev_week is not None:
     st.subheader(f"Resultados Semana {prev_week}")
@@ -158,33 +141,34 @@ for p in partidos_prev:
     partido_id = p[0]
     home_badge = p[5]
     away_badge = p[6]
+    status = p[7]
 
     home_score, away_score = get_match_result(partido_id)
 
     if home_score is None or away_score is None:
-        resultado = "Sin resultado"
+        resultado = "—"
     else:
         resultado = f"{home_score} - {away_score}"
 
     data_prev.append({
         "Local": f'<img src="{home_badge}" width="40">' if home_badge else "",
         "Resultado": resultado,
-        "Visitante": f'<img src="{away_badge}" width="40">' if away_badge else ""
+        "Visitante": f'<img src="{away_badge}" width="40">' if away_badge else "",
+        "Estado": status
     })
 
 df_prev = pd.DataFrame(data_prev)
 st.markdown(df_prev.to_html(escape=False, index=False), unsafe_allow_html=True)
 
 # ======================================================
-# PRÓXIMOS PARTIDOS
+# ROUND ACTUAL (SEMANA COMPLETA)
 # ======================================================
-if current_week is None:
-    st.subheader("Próximos partidos")
-else:
-    st.subheader(WEEK_TITLES.get(
+st.subheader(
+    WEEK_TITLES.get(
         current_week,
-        f"Próximos partidos Semana {current_week}"
-    ))
+        f"Round / Semana {current_week}"
+    )
+)
 
 partidos_next = [p for p in partidos if p[1] == current_week]
 partidos_next.sort(key=lambda x: x[2] or "9999-12-31")
@@ -196,6 +180,7 @@ for p in partidos_next:
     fecha = p[2]
     home_badge = p[5]
     away_badge = p[6]
+    status = p[7]
 
     if fecha:
         try:
@@ -208,7 +193,7 @@ for p in partidos_next:
         fecha_fmt = "To be defined"
         fecha_db = None
 
-    estado = get_prediccion_status(
+    estado_pred = get_prediccion_status(
         st.session_state.user,
         partido_id,
         fecha_db
@@ -219,7 +204,8 @@ for p in partidos_next:
         "Local": f'<img src="{home_badge}" width="40">' if home_badge else "",
         "vs": "vs",
         "Visitante": f'<img src="{away_badge}" width="40">' if away_badge else "",
-        "Predicción": estado
+        "Estado": status,
+        "Predicción": estado_pred
     })
 
 df_next = pd.DataFrame(data_next)
