@@ -153,8 +153,16 @@ partidos_prev = [p for p in partidos if p[1] == prev_week]
 partidos_prev.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
 
 data_prev = []
-for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos_prev:
+
+for p in partidos_prev:
+    partido_id = p[0]
+    semana = p[1]
+    fecha = p[2]
+    home_badge = p[5]
+    away_badge = p[6]
+
     home_score, away_score = get_match_result(partido_id)
+
     if home_score is None or away_score is None:
         resultado = "Sin resultado"
     else:
@@ -165,6 +173,7 @@ for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos_prev:
         "Resultado": resultado,
         "Visitante": f'<img src="{away_badge}" width="40">' if away_badge else ""
     })
+
 
 df_prev = pd.DataFrame(data_prev)
 st.markdown(df_prev.to_html(escape=False, index=False), unsafe_allow_html=True)
@@ -182,7 +191,13 @@ partidos_next = [p for p in partidos if p[1] == current_week]
 partidos_next.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
 
 data_next = []
-for partido_id, semana, fecha, _, _, home_badge, away_badge, _ in partidos_next:
+for p in partidos_next:
+    partido_id = p[0]
+    semana = p[1]
+    fecha = p[2]
+    home_badge = p[5]
+    away_badge = p[6]
+
     # Convertir fecha a formato YYYY-MM-DD para comparar con DB
     if fecha:
         try:
