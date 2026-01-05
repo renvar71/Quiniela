@@ -5,7 +5,6 @@ import os
 import hashlib
 from db import DB, create_database
 from api import save_next_games, save_teams
-from helpers_auth import save_login, load_login, logout
 
 # siempre intenta cargar datos
 create_database()
@@ -75,10 +74,10 @@ if not st.session_state.logged_in:
             if authenticate(email, hash_pw(password)):
                 st.session_state.logged_in = True
                 st.session_state.user = email
-                save_login(email)        # 👈 guarda cookie
                 st.rerun()
             else:
                 st.error("Credenciales incorrectas")
+
 
     else:
         nombre = st.text_input("Nombre")
