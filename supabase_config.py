@@ -1,9 +1,7 @@
-# supabase_config.py
-from supabase import create_client, Client
 import os
+from supabase import create_client, Client
 
-SUPABASE_URL = "https://rkvmhnjelpboagqjvdgo.supabase.co"
-SUPABASE_KEY = "sb_publishable_Xd5COGbn7rx7hz6eVdgwtw_uWlF48pr"
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
