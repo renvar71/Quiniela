@@ -1,10 +1,9 @@
 import streamlit as st
-import sqlite3
-import requests
 from datetime import datetime, date
-from db import DB, get_prediccion_status, WEEK_TITLES
-from api import API_KEY
+from db import get_partidos, get_prediccion_status, WEEK_TITLES
 import pandas as pd
+
+st.set_page_config(page_title="🏈 QUINIELA NFL 🏈")
 
 # -------------------------
 # SESSION CHECK
@@ -36,72 +35,17 @@ st.divider()
 # -------------------------
 st.markdown("""
 <style>
-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
-
-th, td {
-    text-align: center;
-    vertical-align: middle;
-    padding: 6px;
-    font-size: 14px;
-}
-
-th {
-    font-weight: bold;
-    background-color: #f0f0f0;
-    color: #000;
-    white-space: nowrap;
-}
-
-td img {
-    display: block;
-    margin: 0 auto;
-}
+table {width: 100%; border-collapse: collapse; table-layout: fixed;}
+th, td {text-align: center; vertical-align: middle; padding: 6px; font-size: 14px;}
+th {font-weight: bold; background-color: #f0f0f0; color: #000; white-space: nowrap;}
+td img {display: block; margin: 0 auto;}
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------
-# API (CACHE)
-# -------------------------
-@st.cache_data(ttl=300)
-def get_match_result(partido_id):
-    try:
-        url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookupevent.php?id={partido_id}"
-        r = requests.get(url, timeout=5)
-        r.raise_for_status()
-        data = r.json().get("events", [])
-        if not data:
-            return None, None
-        return data[0].get("intHomeScore"), data[0].get("intAwayScore")
-    except:
-        return None, None
-
-# -------------------------
-# DB
-# -------------------------
-conn = sqlite3.connect(DB)
-cur = conn.cursor()
-
-cur.execute("""
-SELECT 
-    partido_id,
-    semana,
-    fecha,
-    equipo_local_id,
-    equipo_visitante_id,
-    home_badge_url,
-    away_badge_url,
-    status,
-    tipo
-FROM partidos
-ORDER BY fecha
-""")
-
-partidos = cur.fetchall()
-conn.close()
+# ======================================================
+# DB: obtener partidos
+# ======================================================
+partidos = get_partidos()  # trae todos los partidos
 
 today = date.today()
 
@@ -109,17 +53,17 @@ today = date.today()
 # SEMANA ACTUAL (FIX)
 # -------------------------
 current_week = max(
-    p[1] for p in partidos
-    if p[1] is not None
+    p["semana"] for p in partidos
+    if p["semana"] is not None
 )
 
 # -------------------------
 # SEMANA PREVIA (para resultados)
 # -------------------------
 valid_weeks = [
-    p[1] for p in partidos
-    if p[2] and p[1] is not None
-    and datetime.fromisoformat(p[2]).date() <= today
+    p["semana"] for p in partidos
+    if p["fecha"] and p["semana"] is not None
+    and datetime.fromisoformat(p["fecha"]).date() <= today
 ]
 
 prev_week = max(valid_weeks) if valid_weeks else None
@@ -132,23 +76,16 @@ if prev_week is not None:
 else:
     st.subheader("Resultados recientes")
 
-partidos_prev = [p for p in partidos if p[1] == prev_week]
-partidos_prev.sort(key=lambda x: x[2] or "9999-12-31")
+partidos_prev = [p for p in partidos if p["semana"] == prev_week]
+partidos_prev.sort(key=lambda x: x["fecha"] or "9999-12-31")
 
 data_prev = []
 
 for p in partidos_prev:
-    partido_id = p[0]
-    home_badge = p[5]
-    away_badge = p[6]
-    status = p[7]
-
-    home_score, away_score = get_match_result(partido_id)
-
-    if home_score is None or away_score is None:
-        resultado = "—"
-    else:
-        resultado = f"{home_score} - {away_score}"
+    home_badge = p["home_badge_url"]
+    away_badge = p["away_badge_url"]
+    status = p["status"]
+    resultado = "—"  # opcional, si tienes puntajes podrías traerlos
 
     data_prev.append({
         "Local": f'<img src="{home_badge}" width="40">' if home_badge else "",
@@ -170,34 +107,29 @@ st.subheader(
     )
 )
 
-partidos_next = [p for p in partidos if p[1] == current_week]
-partidos_next.sort(key=lambda x: x[2] or "9999-12-31")
+partidos_next = [p for p in partidos if p["semana"] == current_week]
+partidos_next.sort(key=lambda x: x["fecha"] or "9999-12-31")
 
 data_next = []
 
 for p in partidos_next:
-    partido_id = p[0]
-    fecha = p[2]
-    home_badge = p[5]
-    away_badge = p[6]
-    status = p[7]
-
-    if fecha:
-        try:
-            fecha_fmt = datetime.fromisoformat(fecha).strftime("%d %b %Y")
-            fecha_db = datetime.fromisoformat(fecha).strftime("%Y-%m-%d")
-        except ValueError:
-            fecha_fmt = "To be defined"
-            fecha_db = None
-    else:
-        fecha_fmt = "To be defined"
-        fecha_db = None
+    home_badge = p["home_badge_url"]
+    away_badge = p["away_badge_url"]
+    status = p["status"]
+    fecha_db = p["fecha"]
 
     estado_pred = get_prediccion_status(
         st.session_state.user,
-        partido_id,
+        p["partido_id"],
         fecha_db
     )
+
+    fecha_fmt = "To be defined"
+    if fecha_db:
+        try:
+            fecha_fmt = datetime.fromisoformat(fecha_db).strftime("%d %b %Y")
+        except ValueError:
+            pass
 
     data_next.append({
         "Fecha": fecha_fmt,
