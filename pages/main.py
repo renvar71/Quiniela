@@ -90,14 +90,16 @@ today = date.today()
 # -------------------------
 # Determinar prev_week y current_week
 # -------------------------
-
 valid_dates = []
 for p in partidos:
-    if p[2] and p[1] is not None:
+    fecha = p[2]
+    semana = p[1]
+
+    if fecha and semana is not None:
         try:
-            d = datetime.fromisoformat(p[2]).date()
+            d = datetime.fromisoformat(fecha).date()
             if d <= today:
-                valid_dates.append((d, p[1]))
+                valid_dates.append((d, semana))
         except ValueError:
             continue
 
@@ -109,11 +111,14 @@ else:
 
 future_dates = []
 for p in partidos:
-    if p[2] and p[1] is not None:
+    fecha = p[2]
+    semana = p[1]
+
+    if fecha and semana is not None:
         try:
-            d = datetime.fromisoformat(p[2]).date()
+            d = datetime.fromisoformat(fecha).date()
             if d > today:
-                future_dates.append((d, p[1]))
+                future_dates.append((d, semana))
         except ValueError:
             continue
 
@@ -121,6 +126,7 @@ if future_dates:
     current_week = min(w for d, w in future_dates)
 else:
     current_week = None
+
 
 # -------------------------
 # CSS GLOBAL PARA TABLAS
