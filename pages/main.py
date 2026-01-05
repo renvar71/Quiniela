@@ -181,11 +181,13 @@ st.markdown(df_prev.to_html(escape=False, index=False), unsafe_allow_html=True)
 # ======================================================
 # PRÓXIMOS PARTIDOS
 # ======================================================
-if current_week is not None:
-    st.subheader(f"Próximos partidos Semana {current_week}")
-else:
+if current_week is None:
     st.subheader("Próximos partidos")
-
+else:
+    st.subheader(WEEK_TITLES.get(
+        current_week,
+        f"Próximos partidos Semana {current_week}"
+    ))
 
 partidos_next = [p for p in partidos if p[1] == current_week]
 partidos_next.sort(key=lambda x: x[2] or "9999-12-31")  # ordenar por fecha
