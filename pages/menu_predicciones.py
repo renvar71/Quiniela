@@ -1,6 +1,7 @@
 import streamlit as st
 import sqlite3
 from db import DB, get_prediccion_status
+import config
 
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.warning("Debes iniciar sesión")
@@ -19,13 +20,24 @@ st.session_state.user_id = user_id
 
 conn = sqlite3.connect(DB)
 cur = conn.cursor()
-cur.execute("""
-SELECT p.partido_id, p.semana, p.fecha, e1.nombre, e2.nombre
-FROM partidos p
-JOIN equipos e1 ON p.equipo_local_id = e1.team_id
-JOIN equipos e2 ON p.equipo_visitante_id = e2.team_id
-ORDER BY p.fecha
-""")
+if st.session_state.test_mode:
+    cur.execute("""
+        SELECT p.partido_id, p.semana, p.fecha, e1.nombre, e2.nombre
+        FROM partidos p
+        JOIN equipos e1 ON p.equipo_local_id = e1.team_id
+        JOIN equipos e2 ON p.equipo_visitante_id = e2.team_id
+        WHERE p.is_test = 1
+        ORDER BY p.fecha DESC
+    """)
+else:
+    cur.execute("""
+        SELECT p.partido_id, p.semana, p.fecha, e1.nombre, e2.nombre
+        FROM partidos p
+        JOIN equipos e1 ON p.equipo_local_id = e1.team_id
+        JOIN equipos e2 ON p.equipo_visitante_id = e2.team_id
+        WHERE p.fecha >= DATE('now')
+        ORDER BY p.fecha
+    """)
 partidos = cur.fetchall()
 conn.close()
 
