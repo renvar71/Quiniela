@@ -27,17 +27,20 @@ def create_database():
     CREATE TABLE IF NOT EXISTS partidos (
         partido_id INTEGER PRIMARY KEY AUTOINCREMENT,
         external_id TEXT UNIQUE,
-        semana INTEGER NOT NULL,
+        semana INTEGER,                 -- NULL para playoffs / SB
         fecha DATETIME,
         home_badge_url TEXT,
         away_badge_url TEXT,
-        equipo_local_id TEXT NOT NULL,
-        equipo_visitante_id TEXT NOT NULL,
+        equipo_local_id TEXT,           -- NULL si TBD
+        equipo_visitante_id TEXT,       -- NULL si TBD
         estadio TEXT,
         status TEXT DEFAULT 'scheduled',
+        tipo TEXT,                      -- regular | wildcard | divisional | conference | superbowl
         FOREIGN KEY(equipo_local_id) REFERENCES equipos(team_id),
         FOREIGN KEY(equipo_visitante_id) REFERENCES equipos(team_id)
     );
+
+
 
     CREATE TABLE IF NOT EXISTS predicciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,13 +77,20 @@ def hash_password(password):
 def get_partidos(semana=None):
     conn = sqlite3.connect(DB)
     cur = conn.cursor()
-    if semana:
-        cur.execute("SELECT * FROM partidos WHERE semana = ?", (semana,))
-    else:
+
+    if semana is None:
         cur.execute("SELECT * FROM partidos")
+    else:
+        cur.execute(
+            "SELECT * FROM partidos WHERE semana = ?",
+            (semana,)
+        )
+
     rows = cur.fetchall()
     conn.close()
     return rows
+
+
 
 def save_prediccion(user_id, partido_id, semana, fecha_del_partido,
                     pick, score_local=None, score_away=None,
