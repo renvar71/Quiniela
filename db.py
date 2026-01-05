@@ -174,3 +174,10 @@ def get_user_id(email):
     row = cur.fetchone()
     conn.close()
     return row[0] if row else None
+
+WEEK_TITLES = {
+    160: "Próximos partidos Ronda Comodines",
+    125: "Próximos partidos Ronda Divisional",
+    150: "Próximos partidos Campeón de Conferencia",
+    200: "Próximo partido Super Bowl",
+}
