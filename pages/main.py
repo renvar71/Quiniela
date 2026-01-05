@@ -198,13 +198,23 @@ st.markdown(df_next.to_html(escape=False, index=False), unsafe_allow_html=True)
 # -------------------------
 # SIDEBAR GLOBAL
 # -------------------------
+
+# -------------------------
+# INIT SESSION STATE
+# -------------------------
+if "test_mode" not in st.session_state:
+    st.session_state.test_mode = False
+    
 st.sidebar.markdown("### 🧪 Modo de prueba")
 
-test_mode = st.sidebar.toggle("Activar TEST MODE", value=False)
+st.session_state.test_mode = st.sidebar.toggle(
+    "Activar TEST MODE",
+    value=st.session_state.test_mode
+)
 
-config.TEST_MODE = test_mode
+config.TEST_MODE = st.session_state.test_mode
 
-if test_mode:
+if st.session_state.test_mode:
     st.sidebar.success("TEST MODE ACTIVO")
 else:
     st.sidebar.info("Modo producción")
