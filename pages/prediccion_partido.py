@@ -63,6 +63,7 @@ with st.form("form_prediccion"):
             user_id=user_id,
             partido_id=partido_id,
             semana=semana,
+            fecha_partido=fecha_partido
             pick=ganador,
             score_local=score_local,
             score_away=score_away,
