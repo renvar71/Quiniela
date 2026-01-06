@@ -73,7 +73,7 @@ def get_team_badges():
 def save_partido(partido: dict):
     supabase.table("partidos").upsert(
         partido,
-        on_conflict="partido_id"
+        on_conflict="id_partido"
     ).execute()
 
 
@@ -94,7 +94,7 @@ def get_partidos(semana=None):
 # -------------------------
 def save_prediccion(
     usuario_id,
-    partido_id,
+    id_partido,
     semana,
     fecha_partido,
     pick,
@@ -107,7 +107,7 @@ def save_prediccion(
     supabase.table("predicciones").upsert(
         {
             "usuario_id": usuario_id,
-            "partido_id": partido_id,
+            "id_partido": id_partido,
             "semana": semana,
             "pick": pick,
             "score_local": score_local,
@@ -117,13 +117,13 @@ def save_prediccion(
             "extra_question_2": extra_question_2,
             "fecha_partido": fecha_partido
         },
-        on_conflict="usuario_id,partido_id"
+        on_conflict="usuario_id,id_partido"
     ).execute()
 
     supabase.table("predicciones").upsert(
         {
             "usuario_id": usuario_id,
-            "partido_id": partido_id,
+            "id_partido": id_partido,
             "semana": semana,
             "pick": pick,
             "score_local": score_local,
@@ -133,15 +133,15 @@ def save_prediccion(
             "extra_question_2": extra_question_2,
             "fecha_partido": fecha_partido
         },
-        on_conflict="usuario_id,partido_id"
+        on_conflict="usuario_id,id_partido"
     ).execute()
 
 
-def has_prediccion(usuario_id, partido_id):
+def has_prediccion(usuario_id, id_partido):
     res = supabase.table("predicciones") \
         .select("id") \
         .eq("usuario_id", usuario_id) \
-        .eq("partido_id", partido_id) \
+        .eq("id_partido", id_partido) \
         .execute()
 
     return bool(res.data)
@@ -151,11 +151,11 @@ def has_prediccion(usuario_id, partido_id):
 # -------------------------
 from datetime import datetime, timedelta, date
 
-def get_prediccion_status(usuario_id, partido_id, fecha_partido):
+def get_prediccion_status(usuario_id, id_partido, fecha_partido):
     # -------------------------
     # VALIDACIÓN BÁSICA
     # -------------------------
-    if not usuario_id or not partido_id:
+    if not usuario_id or not id_partido:
         return "🟡 Pendiente"
 
     now = datetime.now()
@@ -168,7 +168,7 @@ def get_prediccion_status(usuario_id, partido_id, fecha_partido):
         .table("predicciones")
         .select("fecha_partido")
         .eq("usuario_id", usuario_id)
-        .eq("partido_id", partido_id)
+        .eq("id_partido", id_partido)
         .limit(1)
         .execute()
     )
@@ -213,10 +213,10 @@ def get_prediccion_status(usuario_id, partido_id, fecha_partido):
 # -------------------------
 # PUNTAJES
 # -------------------------
-def save_puntaje(usuario_id, partido_id, semana, puntos):
+def save_puntaje(usuario_id, id_partido, semana, puntos):
     supabase.table("puntajes").upsert({
         "usuario_id": usuario_id,
-        "partido_id": partido_id,
+        "id_partido": id_partido,
         "semana": semana,
         "puntos": puntos
-    }, on_conflict="usuario_id,partido_id").execute()
+    }, on_conflict="usuario_id,id_partido").execute()
