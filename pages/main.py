@@ -121,19 +121,6 @@ st.markdown(
 )
 
 # -------------------------
-# SEMANAS
-# -------------------------
-past_weeks = [
-    p["semana"] for p in partidos
-    if p.get("fecha")
-    and p.get("semana") is not None
-    and datetime.fromisoformat(p["fecha"]).date() <= today
-]
-
-prev_week = max(past_weeks) if past_weeks else None
-current_week = max(p["semana"] for p in partidos if p.get("semana") is not None)
-
-# -------------------------
 # PARTIDOS FUTUROS (status scheduled)
 # -------------------------
 futuros = [p for p in partidos if p.get("status") == "scheduled"]
@@ -185,7 +172,3 @@ if data_completados:
     st.markdown(df_completados.to_html(escape=False, index=False), unsafe_allow_html=True)
 else:
     st.info("No hay resultados previos")
-
-
-df_next = pd.DataFrame(data_next)
-st.markdown(df_next.to_html(escape=False, index=False), unsafe_allow_html=True)
