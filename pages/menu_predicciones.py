@@ -19,9 +19,13 @@ res = (
     supabase
     .table("partidos")
     .select(
-        "partido_id, semana, fecha, "
-        "equipos!partidos_equipo_local_id_fkey(nombre), "
-        "equipos!partidos_equipo_visitante_id_fkey(nombre)"
+        """
+        partido_id,
+        semana,
+        fecha,
+        local:equipos!partidos_equipo_local_id_fkey(nombre),
+        visitante:equipos!partidos_equipo_visitante_id_fkey(nombre)
+        """
     )
     .order("fecha")
     .execute()
