@@ -1,8 +1,6 @@
 import requests
-import sqlite3
-from db import DB
+from supabase_config import supabase
 from api import API_KEY
-
 
 # -------------------------
 # RESULTADO REAL DEL PARTIDO
@@ -74,40 +72,47 @@ def calcular_puntaje_prediccion(prediccion, resultado):
 # -------------------------
 # CALCULAR PUNTAJES DEL PARTIDO
 # -------------------------
-def calcular_puntajes_partido(partido_id):
-    """
-    Calcula puntaje para todos los usuarios en un partido
-    """
-    resultado = fetch_match_result(partido_id)
+def calcular_puntajes_partido(id_partido, semana):
+    resultado = fetch_match_result(id_partido)
     if not resultado:
         return []
 
-    conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    res = (
+        supabase
+        .table("predicciones")
+        .select("usuario_id, pick, score_local, score_away")
+        .eq("id_partido", id_partido)
+        .execute()
+    )
 
-    cur.execute("""
-        SELECT user_id, pick, score_local, score_away
-        FROM predicciones
-        WHERE partido_id = ?
-    """, (partido_id,))
-
-    predicciones = cur.fetchall()
-    conn.close()
+    if not res.data:
+        return []
 
     resultados = []
 
-    for user_id, pick, s_local, s_away in predicciones:
+    for p in res.data:
         pred = {
-            "pick": pick,
-            "score_local": s_local,
-            "score_away": s_away
+            "pick": p["pick"],
+            "score_local": p["score_local"],
+            "score_away": p["score_away"]
         }
 
         puntos = calcular_puntaje_prediccion(pred, resultado)
 
+        # 🔥 Guardar directamente en Supabase
+        supabase.table("puntajes").upsert(
+            {
+                "usuario_id": p["usuario_id"],
+                "id_partido": id_partido,
+                "semana": semana,
+                "puntos": puntos
+            },
+            on_conflict="usuario_id,id_partido"
+        ).execute()
+
         resultados.append({
-            "user_id": user_id,
-            "partido_id": partido_id,
+            "usuario_id": p["usuario_id"],
+            "id_partido": id_partido,
             "puntos": puntos
         })
 
@@ -118,20 +123,19 @@ def calcular_puntajes_partido(partido_id):
 # RANKING TOTAL
 # -------------------------
 def ranking_general():
-    """
-    Suma puntos de todos los partidos
-    """
-    conn = sqlite3.connect(DB)
-    cur = conn.cursor()
+    res = (
+        supabase
+        .table("puntajes")
+        .select("usuario_id, puntos")
+        .execute()
+    )
 
-    cur.execute("""
-        SELECT user_id, SUM(puntos)
-        FROM puntajes
-        GROUP BY user_id
-        ORDER BY SUM(puntos) DESC
-    """)
+    ranking = {}
+    for r in res.data or []:
+        ranking[r["usuario_id"]] = ranking.get(r["usuario_id"], 0) + r["puntos"]
 
-    ranking = cur.fetchall()
-    conn.close()
-
-    return ranking
+    return sorted(
+        ranking.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
