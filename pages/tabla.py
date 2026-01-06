@@ -69,4 +69,8 @@ df.insert(0, "Posición", posiciones)
 # -------------------------
 # MOSTRAR TABLA
 # -------------------------
-st.table(df.style.hide(axis="index"))
+st.dataframe(
+    df,
+    hide_index=True,
+    use_container_width=True
+)
