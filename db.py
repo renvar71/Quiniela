@@ -3,6 +3,17 @@ from datetime import datetime, timedelta
 import hashlib
 
 # -------------------------
+# TITULOS POR SEMANA
+# -------------------------
+WEEK_TITLES = {
+    160: "Próximos partidos Ronda Comodines",
+    125: "Próximos partidos Ronda Divisional",
+    150: "Próximos partidos Campeón de Conferencia",
+    200: "Próximo partido Super Bowl",
+}
+
+
+# -------------------------
 # HASH PASSWORD
 # -------------------------
 def hash_password(password: str) -> str:
