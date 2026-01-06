@@ -97,7 +97,7 @@ if not res.data:
 # ======================================================
 # 2️⃣ CARGAR PARTIDOS (solo si no existen)
 # ======================================================
-res = supabase.table("partidos").select("partido_id").limit(1).execute()
+res = supabase.table("partidos").select("id_partido").limit(1).execute()
 
 if not res.data:
     try:
@@ -112,7 +112,7 @@ if not res.data:
                 fecha_iso = f"{e['dateEvent']}T{e['strTime']}"
 
             supabase.table("partidos").upsert({
-                "partido_id": e["idEvent"],
+                "id_partido": e["idEvent"],
                 "semana": int(e.get("intRound") or 0),
                 "fecha": fecha_iso,
                 "equipo_local_id": e["idHomeTeam"],
@@ -120,7 +120,7 @@ if not res.data:
                 "home_badge_url": e.get("strHomeTeamBadge"),
                 "away_badge_url": e.get("strAwayTeamBadge"),
                 "status": "scheduled"
-            }, on_conflict="partido_id").execute()
+            }, on_conflict="id_partido").execute()
 
         st.success("✅ Partidos cargados")
     except Exception as e:
@@ -222,7 +222,7 @@ for p in partidos_next:
 
     estado_pred = get_prediccion_status(
         USER_ID,
-        p["partido_id"],
+        p["id_partido"],
         fecha_db
     )
 
