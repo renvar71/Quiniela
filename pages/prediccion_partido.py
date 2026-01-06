@@ -21,7 +21,10 @@ required_keys = [
 ]
 
 if not all(st.session_state.get(k) is not None for k in required_keys):
+    for k in required_keys:
+        st.session_state.pop(k, None)
     st.switch_page("pages/menu_predicciones.py")
+
 
 partido_id = st.session_state.partido_id
 semana = st.session_state.semana
@@ -72,6 +75,7 @@ if st.button("⬅️ Volver"):
         st.session_state.pop(k, None)
 
     st.switch_page("pages/menu_predicciones.py")
+    st.stop()
 
 # -------------------------
 # UI
@@ -126,20 +130,6 @@ with st.form("form_prediccion"):
         st.markdown(f"<h4 style='text-align:center'>{visitante}</h4>", unsafe_allow_html=True)
 
 
-    score_local = st.number_input(
-        f"Marcador {local}",
-        min_value=0,
-        max_value=100,
-        step=1
-    )
-
-    score_away = st.number_input(
-        f"Marcador {visitante}",
-        min_value=0,
-        max_value=100,
-        step=1
-    )
-
     line = st.radio(
         "Over / Under total puntos",
         ["Over", "Under"],
@@ -165,20 +155,17 @@ with st.form("form_prediccion"):
     submit = st.form_submit_button("Guardar Predicción")
 
 # -------------------------
-# CALCULAR EL GANADOR
-# -------------------------
-
-if score_local > score_away:
-    ganador = local
-elif score_away > score_local:
-    ganador = visitante
-else:
-    ganador = "Empate"
-
-# -------------------------
 # SUBMIT
 # -------------------------
+
 if submit:
+    if score_local > score_away:
+        ganador = local
+    elif score_away > score_local:
+        ganador = visitante
+    else:
+        ganador = "Empate"
+
     save_prediccion(
         usuario_id=user_id,
         partido_id=partido_id,
@@ -201,3 +188,5 @@ if submit:
         st.session_state.pop(k, None)
 
     st.switch_page("pages/menu_predicciones.py")
+    st.stop()
+
