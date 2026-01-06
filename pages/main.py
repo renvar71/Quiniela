@@ -10,7 +10,7 @@ from db import get_prediccion_status, WEEK_TITLES
 # CONFIG
 # -------------------------
 LEAGUE_ID = "4391"  # NFL
-API_KEY = "TU_API_KEY"  # Reemplaza con tu API Key
+API_KEY = 609380  # Reemplaza con tu API Key
 API_URL = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookupleague.php"
 
 st.set_page_config(page_title="🏈 QUINIELA NFL 🏈", layout="wide")
