@@ -85,10 +85,9 @@ with st.form("form_prediccion"):
 
     col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
 
-
-   
+    # LOGO LOCAL
     with col1:
-        badge_url_local = team_badges.get(idHomeTeam)
+        badge_url_local = team_badges.get(local)
         if badge_url_local:
             st.markdown(
                 f'<div style="text-align:center">'
@@ -97,18 +96,21 @@ with st.form("form_prediccion"):
                 unsafe_allow_html=True
             )
 
-
+    # SCORE LOCAL
     with col2:
         score_local = st.number_input("", 0, 100, 0, key="score_local")
 
+    # SEPARADOR "vs"
     with col3:
         st.markdown("<h2 style='text-align:center'>vs</h2>", unsafe_allow_html=True)
-        
+
+    # SCORE VISITANTE
     with col4:
         score_away = st.number_input("", 0, 100, 0, key="score_away")
 
+    # LOGO VISITANTE
     with col5:
-        badge_url_away = team_badges.get(idAwayTeam)
+        badge_url_away = team_badges.get(visitante)
         if badge_url_away:
             st.markdown(
                 f'<div style="text-align:center">'
@@ -117,14 +119,15 @@ with st.form("form_prediccion"):
                 unsafe_allow_html=True
             )
 
+    # OVER / UNDER
     line = st.radio("Over / Under total puntos", ["Over", "Under"], horizontal=True)
 
     st.markdown("**Preguntas extra:**")
-
     extra_1 = st.radio(pregunta_1, [local, visitante], horizontal=True, key="extra_1")
     extra_2 = st.radio(pregunta_2, [local, visitante], horizontal=True, key="extra_2")
 
-submit = st.form_submit_button("Guardar Predicción")
+    # SUBMIT BUTTON ahora está dentro del form
+    submit = st.form_submit_button("Guardar Predicción")
 
 # -------------------------
 # SUBMIT
