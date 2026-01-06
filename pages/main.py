@@ -161,12 +161,14 @@ completados = [p for p in partidos if p.get("status") == "finished"]
 
 data_completados = []
 for p in completados:
+    
     data_completados.append({
         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
-        "Resultado": "—",
+        "Resultado": f"{p.get('score_local', 0)} - {p.get('score_away', 0)}",
         "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
         "Estado": p.get("status", "finished")
     })
+
 
 if data_completados:
     df_completados = pd.DataFrame(data_completados)
