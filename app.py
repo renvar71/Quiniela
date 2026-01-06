@@ -99,7 +99,7 @@ if "data_loaded" not in st.session_state:
         save_teams()
         save_next_games()
         st.session_state.data_loaded = True
-      except Exception as e:
+    except Exception as e:
         st.error(f"Error cargando datos iniciales: {e}")
 # -------------------------
 # NAVIGATION (POST LOGIN)
