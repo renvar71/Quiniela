@@ -95,12 +95,17 @@ if not st.session_state.logged_in:
 # -------------------------
 
 if "data_loaded" not in st.session_state:
-    try:
-        save_teams()
-        save_next_games()
-        st.session_state.data_loaded = True
-    except Exception as e:
-        st.error(f"Error cargando datos iniciales: {e}")
+
+    save_teams()
+
+    partidos = save_next_games()
+
+    if not partidos:
+        st.info("⏳ Esperando agenda de próximos partidos...")
+    else:
+        st.success(f"📅 {len(partidos)} partidos cargados")
+
+    st.session_state.data_loaded = True
 # -------------------------
 # NAVIGATION (POST LOGIN)
 # -------------------------
