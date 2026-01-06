@@ -4,20 +4,10 @@ from db import (
     supabase,
     hash_password,
 )
-from api import save_teams, save_next_games
-
-# -------------------------
-# Cargar datos iniciales solo una vez
-# -------------------------
-if "data_loaded" not in st.session_state:
-    try:
-        save_teams()
-        save_next_games()
-        st.session_state.data_loaded = True
-    except Exception as e:
-        st.error(f"Error cargando datos iniciales: {e}")
 
 st.set_page_config(initial_sidebar_state="collapsed")
+
+from api import save_teams, save_next_games
 
 # -------------------------
 # SESSION INIT
@@ -35,17 +25,16 @@ def authenticate_user(email, password):
     res = supabase.table("usuarios") \
         .select("id, password_hash") \
         .eq("email", email) \
-        .single() \
         .execute()
 
-    if not res.data:
+    if not res.data or len(res.data) == 0:
         return None
 
-    if res.data["password_hash"] == hash_password(password):
-        return res.data["id"]
+    user = res.data[0]
 
+    if user["password_hash"] == hash_password(password):
+        return user["id"]
     return None
-
 
 def add_user(nombre, email, password):
     try:
@@ -101,6 +90,17 @@ if not st.session_state.logged_in:
 
     st.stop()
 
+# -------------------------
+# Cargar datos iniciales solo una vez
+# -------------------------
+
+if "data_loaded" not in st.session_state:
+    try:
+        save_teams()
+        save_next_games()
+        st.session_state.data_loaded = True
+      except Exception as e:
+        st.error(f"Error cargando datos iniciales: {e}")
 # -------------------------
 # NAVIGATION (POST LOGIN)
 # -------------------------
