@@ -4,7 +4,7 @@ import pandas as pd
 import random
 from datetime import datetime
 import os
-
+from api import get_team_badges
 from db import save_prediccion
 
 # -------------------------
@@ -39,6 +39,7 @@ local = st.session_state.local
 visitante = st.session_state.visitante
 fecha_partido = st.session_state.fecha_partido
 
+team_badges = get_team_badges()
 # -------------------------
 # PREGUNTAS EXTRA
 # -------------------------
@@ -84,14 +85,18 @@ with st.form("form_prediccion"):
 
     col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
 
+
+   
     with col1:
-        if home_badge_url:
+        badge_url_local = team_badges.get(idHomeTeam)
+        if badge_url_local:
             st.markdown(
                 f'<div style="text-align:center">'
-                f'<img src="{home_badge_url}" width="80">'
+                f'<img src="{badge_url_local}" width="80">'
                 f'</div>',
                 unsafe_allow_html=True
             )
+
 
     with col2:
         score_local = st.number_input("", 0, 100, 0, key="score_local")
@@ -103,14 +108,14 @@ with st.form("form_prediccion"):
         score_away = st.number_input("", 0, 100, 0, key="score_away")
 
     with col5:
-        if away_badge_url:
+        badge_url_away = team_badges.get(idAwayTeam)
+        if badge_url_away:
             st.markdown(
                 f'<div style="text-align:center">'
-                f'<img src="{away_badge_url}" width="80">'
+                f'<img src="{badge_url_away}" width="80">'
                 f'</div>',
                 unsafe_allow_html=True
             )
-
 
     line = st.radio("Over / Under total puntos", ["Over", "Under"], horizontal=True)
 
@@ -119,7 +124,7 @@ with st.form("form_prediccion"):
     extra_1 = st.radio(pregunta_1, [local, visitante], horizontal=True, key="extra_1")
     extra_2 = st.radio(pregunta_2, [local, visitante], horizontal=True, key="extra_2")
 
-    submit = st.form_submit_button("Guardar Predicción")
+submit = st.form_submit_button("Guardar Predicción")
 
 # -------------------------
 # SUBMIT
