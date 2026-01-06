@@ -139,3 +139,17 @@ def ranking_general():
         key=lambda x: x[1],
         reverse=True
     )
+def get_resultado_admin_partido(id_partido):
+    res = (
+        supabase
+        .table("resultados_admin")
+        .select("linea, extra_1_resultado, extra_2_resultado")
+        .eq("id_partido", id_partido)
+        .limit(1)
+        .execute()
+    )
+
+    if not res.data:
+        return None
+
+    return res.data[0]
