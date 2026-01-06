@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 import os
 from api import get_team_badges
-from db import save_prediccion
+from db import save_prediccion, WEEK_TITLES
 
 # -------------------------
 # SESSION CHECK
@@ -75,7 +75,7 @@ if st.button("⬅️ Volver"):
 # UI
 # -------------------------
 st.title("🎯 Registrar predicción")
-st.subheader(f"Semana {semana}")
+st.subheader(WEEK_TITLES.get(semana, f"Semana {semana}"))
 st.write(f"**{local} vs {visitante}**")
 
 # -------------------------
