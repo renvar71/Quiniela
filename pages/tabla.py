@@ -69,4 +69,4 @@ df.insert(0, "Posición", posiciones)
 # -------------------------
 # MOSTRAR TABLA
 # -------------------------
-st.table(df)
+st.table(df.style.hide(axis="index"))
