@@ -80,7 +80,7 @@ def calcular_puntajes_partido(id_partido, semana):
     res = (
         supabase
         .table("predicciones")
-        .select("usuario_id, pick, score_local, score_away")
+        .select("usuario_id, pick, score_local, score_away, line_over_under, extra_question_1, extra_question_2")
         .eq("id_partido", id_partido)
         .execute()
     )
