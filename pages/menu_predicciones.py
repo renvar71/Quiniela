@@ -23,7 +23,7 @@ res = (
     .table("partidos")
     .select(
         """
-        partido_id,
+        id_partido,
         semana,
         fecha,
         local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
@@ -44,20 +44,20 @@ partidos = res.data or []
 pendientes = []
 
 for p in partidos:
-    partido_id = p.get("partido_id")
+    id_partido = p.get("id_partido")
     semana = p.get("semana")
     fecha = p.get("fecha")
 
     local = p.get("local", {}).get("nombre")
     visitante = p.get("visitante", {}).get("nombre")
 
-    if not partido_id or not local or not visitante:
+    if not id_partido or not local or not visitante:
         continue
 
-    estado = get_prediccion_status(user_id, partido_id, fecha)
+    estado = get_prediccion_status(user_id, id_partido, fecha)
 
     if estado == "🟡 Pendiente":
-        pendientes.append((partido_id, semana, fecha, local, visitante, p.get("home_badge_url"), p.get("away_badge_url")))
+        pendientes.append((id_partido, semana, fecha, local, visitante, p.get("home_badge_url"), p.get("away_badge_url")))
 
 # -------------------------
 # UI
@@ -68,25 +68,25 @@ st.markdown("*Selecciona un partido para registrar tu predicción*")
 if not pendientes:
     st.success("🎉 No tienes partidos pendientes")
 else:
-    for partido_id, semana, fecha, local, visitante, home_badge_url, away_badge_url in pendientes:
+    for id_partido, semana, fecha, local, visitante, home_badge_url, away_badge_url in pendientes:
         col1, col2, col3 = st.columns([1, 2, 1])
 
         with col2:
             if st.button(
                 f"{local} vs {visitante}",
-                key=f"p_{partido_id}",
+                key=f"p_{id_partido}",
                 use_container_width=True
             ):
                 # limpiar contexto previo
                 for k in [
-                    "partido_id", "semana", "local",
+                    "id_partido", "semana", "local",
                     "visitante", "fecha_partido",
                     "home_badge_url", "away_badge_url"
                 ]:
                     st.session_state.pop(k, None)
 
                 # setear nuevo contexto con badges incluidos
-                st.session_state.partido_id = partido_id
+                st.session_state.id_partido = id_partido
                 st.session_state.semana = semana
                 st.session_state.local = local
                 st.session_state.visitante = visitante
