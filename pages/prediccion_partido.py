@@ -81,13 +81,14 @@ st.write(f"**{local} vs {visitante}**")
 # -------------------------
 # FORM
 # -------------------------
+# FORMULARIO
 with st.form("form_prediccion"):
 
     col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
 
     # LOGO LOCAL
     with col1:
-        home_badge_url = st.session_state.get("home_badge_url") or ""
+        home_badge_url = st.session_state.get("home_badge_url")
         if home_badge_url:
             st.markdown(
                 f'<div style="text-align:center">'
@@ -110,7 +111,7 @@ with st.form("form_prediccion"):
 
     # LOGO VISITANTE
     with col5:
-        away_badge_url = st.session_state.get("away_badge_url") or ""
+        away_badge_url = st.session_state.get("away_badge_url")
         if away_badge_url:
             st.markdown(
                 f'<div style="text-align:center">'
@@ -122,12 +123,15 @@ with st.form("form_prediccion"):
     # OVER / UNDER
     line = st.radio("Over / Under total puntos", ["Over", "Under"], horizontal=True)
 
+    # PREGUNTAS EXTRA
+    pregunta_1, pregunta_2 = st.session_state.preguntas_extra
     st.markdown("**Preguntas extra:**")
-    extra_1 = st.radio(pregunta_1, [local, visitante], horizontal=True, key="extra_1")
-    extra_2 = st.radio(pregunta_2, [local, visitante], horizontal=True, key="extra_2")
+    extra_1 = st.radio(pregunta_1, [st.session_state.local, st.session_state.visitante], horizontal=True, key="extra_1")
+    extra_2 = st.radio(pregunta_2, [st.session_state.local, st.session_state.visitante], horizontal=True, key="extra_2")
 
-    # SUBMIT BUTTON
+    # BOTÓN DE SUBMIT
     submit = st.form_submit_button("Guardar Predicción")
+
 
 
 # -------------------------
