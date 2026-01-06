@@ -15,7 +15,10 @@ if "logged_in" not in st.session_state or not st.session_state.logged_in:
 # -------------------------
 # VALIDAR CONTEXTO REAL
 # -------------------------
-required_keys = ["partido_id", "semana", "local", "visitante", "fecha_partido", "user_id"]
+required_keys = [
+    "partido_id", "semana", "local",
+    "visitante", "fecha_partido", "user_id"
+]
 
 if not all(st.session_state.get(k) is not None for k in required_keys):
     st.switch_page("pages/menu_predicciones.py")
@@ -43,7 +46,6 @@ if (
 
 pregunta_1, pregunta_2 = st.session_state.preguntas_extra
 
-
 # -------------------------
 # CSS BOTÓN FORM
 # -------------------------
@@ -65,7 +67,7 @@ div[data-testid="stForm"] button:hover {
 if st.button("⬅️ Volver"):
     for k in [
         "partido_id", "semana", "local", "visitante",
-        "fecha_partido", "pregunta_extra", "pregunta_partido_id"
+        "fecha_partido", "preguntas_extra", "preguntas_partido_id"
     ]:
         st.session_state.pop(k, None)
 
@@ -83,11 +85,46 @@ st.write(f"**{local} vs {visitante}**")
 # -------------------------
 with st.form("form_prediccion"):
 
-    ganador = st.radio(
-        "Selecciona ganador",
-        [local, visitante],
-        horizontal=True
-    )
+    # -------------------------
+# MARCADOR VISUAL
+# -------------------------
+    col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
+    
+    with col1:
+        st.image(
+            f"logos/{local}.png",  # o URL
+            use_container_width=True
+        )
+        st.markdown(f"<h4 style='text-align:center'>{local}</h4>", unsafe_allow_html=True)
+    
+    with col3:
+        score_local = st.number_input(
+            "",
+            min_value=0,
+            max_value=100,
+            step=1,
+            key="score_local"
+        )
+    
+    with col4:
+        st.markdown("<h2 style='text-align:center'>:</h2>", unsafe_allow_html=True)
+    
+    with col5:
+        score_away = st.number_input(
+            "",
+            min_value=0,
+            max_value=100,
+            step=1,
+            key="score_away"
+        )
+    
+    with col2:
+        st.image(
+            f"logos/{visitante}.png",  # o URL
+            use_container_width=True
+        )
+        st.markdown(f"<h4 style='text-align:center'>{visitante}</h4>", unsafe_allow_html=True)
+
 
     score_local = st.number_input(
         f"Marcador {local}",
@@ -109,7 +146,7 @@ with st.form("form_prediccion"):
         horizontal=True
     )
 
-        st.markdown("**Preguntas extra:**")
+    st.markdown("**Preguntas extra:**")
 
     extra_1 = st.radio(
         pregunta_1,
@@ -126,6 +163,17 @@ with st.form("form_prediccion"):
     )
 
     submit = st.form_submit_button("Guardar Predicción")
+
+# -------------------------
+# CALCULAR EL GANADOR
+# -------------------------
+
+if score_local > score_away:
+    ganador = local
+elif score_away > score_local:
+    ganador = visitante
+else:
+    ganador = "Empate"
 
 # -------------------------
 # SUBMIT
@@ -148,7 +196,7 @@ if submit:
 
     for k in [
         "partido_id", "semana", "local", "visitante",
-        "fecha_partido", "pregunta_extra", "pregunta_partido_id"
+        "fecha_partido", "preguntas_extra", "preguntas_partido_id"
     ]:
         st.session_state.pop(k, None)
 
