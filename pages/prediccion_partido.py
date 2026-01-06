@@ -5,7 +5,7 @@ import random
 from datetime import datetime
 import os
 from api import get_team_badges
-from db import save_prediccion, WEEK_TITLES
+from db import save_prediccion, WEEK_TITLES, get_resultado_admin
 
 # -------------------------
 # SESSION CHECK
@@ -121,7 +121,17 @@ with st.form("form_prediccion"):
             )
 
     # OVER / UNDER
-    line = st.radio("Over / Under total puntos", ["Over", "Under"], horizontal=True)
+    # id_partido ya viene de st.session_state
+    resultado = get_resultado_admin(id_partido)
+
+    if resultado:
+        o_u = resultado[0]["o_u_resultado"]
+    else:
+        st.write("No se encontró información del partido")
+        o_u = "N/A"  # para evitar error si no hay valor
+    
+    line = st.radio(f"Over / Under total puntos ({o_u})", ["Over", "Under"], horizontal=True)
+
 
     # PREGUNTAS EXTRA
     pregunta_1, pregunta_2 = st.session_state.preguntas_extra
