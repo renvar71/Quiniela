@@ -60,12 +60,18 @@ def save_next_games():
     url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventsnextleague.php?id={LEAGUE_ID}"
     r = requests.get(url)
 
-    if r.status_code != 200:
-        print("Error al obtener partidos:", r.status_code)
-        return
+     if r.status_code != 200:
+        print("⚠️ Error al obtener partidos:", r.status_code)
+        return []
 
-    events = r.json().get("events", [])
+    data = r.json() or {}
+    events = data.get("events")
 
+    # API aún sin agenda
+    if not events:
+        print("⏳ Esperando agenda de próximos partidos...")
+        return []
+    
     for g in events:
         # Validar datos
         if not g.get("idEvent") or not g.get("idHomeTeam") or not g.get("idAwayTeam"):
