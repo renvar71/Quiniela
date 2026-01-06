@@ -23,7 +23,7 @@ if not user_id:
 # VALIDAR CONTEXTO REAL
 # -------------------------
 required_keys = [
-    "partido_id", "semana", "local",
+    "id_partido", "semana", "local",
     "visitante", "fecha_partido"
 ]
 
@@ -33,7 +33,7 @@ if not all(st.session_state.get(k) is not None for k in required_keys):
     st.switch_page("pages/menu_predicciones.py")
     st.stop()
 
-partido_id = st.session_state.partido_id
+id_partido = st.session_state.id_partido
 semana = st.session_state.semana
 local = st.session_state.local
 visitante = st.session_state.visitante
@@ -45,14 +45,14 @@ team_badges = get_team_badges()
 # -------------------------
 if (
     "preguntas_extra" not in st.session_state
-    or st.session_state.get("preguntas_partido_id") != partido_id
+    or st.session_state.get("preguntas_id_partido") != id_partido
 ):
     df = pd.read_csv("preguntas.csv")
     preguntas = df["pregunta"].dropna().tolist()
 
-    random.seed(partido_id)
+    random.seed(id_partido)
     st.session_state.preguntas_extra = random.sample(preguntas, 2)
-    st.session_state.preguntas_partido_id = partido_id
+    st.session_state.preguntas_id_partido = id_partido
 
 pregunta_1, pregunta_2 = st.session_state.preguntas_extra
 
@@ -61,9 +61,9 @@ pregunta_1, pregunta_2 = st.session_state.preguntas_extra
 # -------------------------
 if st.button("⬅️ Volver"):
     for k in [
-        "partido_id", "semana", "local", "visitante",
+        "id_partido", "semana", "local", "visitante",
         "fecha_partido", "preguntas_extra",
-        "preguntas_partido_id", "score_local",
+        "preguntas_id_partido", "score_local",
         "score_away", "extra_1", "extra_2"
     ]:
         st.session_state.pop(k, None)
@@ -146,7 +146,7 @@ if submit:
 
     save_prediccion(
         usuario_id=user_id,
-        partido_id=partido_id,
+        id_partido=id_partido,
         semana=semana,
         fecha_partido=fecha_partido,
         pick=ganador,
@@ -160,9 +160,9 @@ if submit:
     st.success("✅ Predicción guardada")
 
     for k in [
-        "partido_id", "semana", "local", "visitante",
+        "id_partido", "semana", "local", "visitante",
         "fecha_partido", "preguntas_extra",
-        "preguntas_partido_id", "score_local",
+        "preguntas_id_partido", "score_local",
         "score_away", "extra_1", "extra_2"
     ]:
         st.session_state.pop(k, None)
