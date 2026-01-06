@@ -8,6 +8,7 @@ from db import get_prediccion_status, WEEK_TITLES
 
 API_KEY = "TU_API_KEY"
 LEAGUE_ID = "4391"  # NFL
+API_URL = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookupleague.php"
 
 st.set_page_config(page_title="🏈 QUINIELA NFL 🏈", layout="wide")
 
@@ -20,21 +21,40 @@ if "logged_in" not in st.session_state or not st.session_state.logged_in:
 
 USER_ID = st.session_state.user_id
 
-st.title("🏈 QUINIELA NFL 🏈")
+# -------------------------
+# NFL LEAGUE BADGE
+# -------------------------
+@st.cache_data
+def get_nfl_badge():
+    r = requests.get(API_URL, params={"id": LEAGUE_ID}, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+    return data["leagues"][0]["strBadge"]
+
+badge_url = get_nfl_badge()
+
+# -------------------------
+# HEADER
+# -------------------------
+col1, col2 = st.columns([1, 6])
+with col1:
+    st.image(badge_url, width=90)
+with col2:
+    st.title("🏈 QUINIELA NFL 🏈")
 
 # -------------------------
 # NAV
 # -------------------------
-st.divider()
-col1, col2 = st.columns(2)
+#st.divider()
+#col1, col2 = st.columns(2)
 
-with col1:
-    if st.button("📊 Mis Predicciones"):
-        st.switch_page("pages/menu_predicciones.py")
+#with col1:
+   #if st.button("📊 Mis Predicciones"):
+        #st.switch_page("pages/menu_predicciones.py")
 
-with col2:
-    if st.button("📋 Tabla"):
-        st.switch_page("pages/tabla.py")
+#with col2:
+    #if st.button("📋 Tabla"):
+        #t.switch_page("pages/tabla.py")
 
 st.divider()
 
