@@ -88,6 +88,7 @@ def get_partidos(semana=None):
     res = query.execute()
     return res.data or []
 
+
 # -------------------------
 # PREDICCIONES
 # -------------------------
@@ -103,6 +104,22 @@ def save_prediccion(
     extra_question_1=None,
     extra_question_2=None
 ):
+    supabase.table("predicciones").upsert(
+        {
+            "usuario_id": usuario_id,
+            "partido_id": partido_id,
+            "semana": semana,
+            "pick": pick,
+            "score_local": score_local,
+            "score_away": score_away,
+            "line_over_under": line_over_under,
+            "extra_question_1": extra_question_1,
+            "extra_question_2": extra_question_2,
+            "fecha_partido": fecha_partido
+        },
+        on_conflict="usuario_id,partido_id"
+    ).execute()
+
     supabase.table("predicciones").upsert(
         {
             "usuario_id": usuario_id,
