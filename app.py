@@ -31,13 +31,15 @@ if "logged_in" not in st.session_state:
 # AUTH HELPERS
 # -------------------------
 def authenticate_user(email, password):
-    user_id = get_user_id(email)
-    if not user_id:
-        return False
-    # Recuperar password hash desde Supabase
-    res = supabase.table("usuarios").select("password_hash").eq("id", user_id).single().execute()
+    res = supabase.table("usuarios") \
+        .select("id, password_hash") \
+        .eq("email", email) \
+        .single() \
+        .execute()
+
     if not res.data:
         return False
+
     return res.data["password_hash"] == hash_password(password)
 
 def add_user(nombre, email, password):
