@@ -13,11 +13,11 @@ if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.stop()
 
 # -------------------------
-# VALIDAR CONTEXTO
+# VALIDAR CONTEXTO REAL
 # -------------------------
-required_keys = ["partido_id", "semana", "local", "visitante", "fecha_partido"]
+required_keys = ["partido_id", "semana", "local", "visitante", "fecha_partido", "user_id"]
 
-if not all(k in st.session_state for k in required_keys):
+if not all(st.session_state.get(k) is not None for k in required_keys):
     st.switch_page("pages/menu_predicciones.py")
 
 partido_id = st.session_state.partido_id
@@ -28,16 +28,21 @@ fecha_partido = st.session_state.fecha_partido
 user_id = st.session_state.user_id
 
 # -------------------------
-# PREGUNTA EXTRA (1 sola vez por partido)
+# PREGUNTAS EXTRA (2 por partido)
 # -------------------------
-if "pregunta_extra" not in st.session_state:
+if (
+    "preguntas_extra" not in st.session_state
+    or st.session_state.get("preguntas_partido_id") != partido_id
+):
     df = pd.read_csv("preguntas.csv")
     preguntas = df["pregunta"].dropna().tolist()
 
     random.seed(partido_id)
-    st.session_state.pregunta_extra = random.choice(preguntas)
+    st.session_state.preguntas_extra = random.sample(preguntas, 2)
+    st.session_state.preguntas_partido_id = partido_id
 
-pregunta = st.session_state.pregunta_extra
+pregunta_1, pregunta_2 = st.session_state.preguntas_extra
+
 
 # -------------------------
 # CSS BOTÓN FORM
@@ -58,8 +63,17 @@ div[data-testid="stForm"] button:hover {
 # NAV BACK
 # -------------------------
 if st.button("⬅️ Volver"):
+    for k in [
+        "partido_id", "semana", "local", "visitante",
+        "fecha_partido", "pregunta_extra", "pregunta_partido_id"
+    ]:
+        st.session_state.pop(k, None)
+
     st.switch_page("pages/menu_predicciones.py")
 
+# -------------------------
+# UI
+# -------------------------
 st.title("🎯 Registrar predicción")
 st.subheader(f"Semana {semana}")
 st.write(f"**{local} vs {visitante}**")
@@ -95,11 +109,20 @@ with st.form("form_prediccion"):
         horizontal=True
     )
 
-    st.markdown("**Pregunta extra:**")
-    extra = st.radio(
-        pregunta,
+        st.markdown("**Preguntas extra:**")
+
+    extra_1 = st.radio(
+        pregunta_1,
         [local, visitante],
-        horizontal=True
+        horizontal=True,
+        key="extra_1"
+    )
+
+    extra_2 = st.radio(
+        pregunta_2,
+        [local, visitante],
+        horizontal=True,
+        key="extra_2"
     )
 
     submit = st.form_submit_button("Guardar Predicción")
@@ -117,8 +140,16 @@ if submit:
         score_local=score_local,
         score_away=score_away,
         line_over_under=line,
-        extra_question=extra
+        extra_question_1=extra_1,
+        extra_question_2=extra_2
     )
 
     st.success("✅ Predicción guardada")
+
+    for k in [
+        "partido_id", "semana", "local", "visitante",
+        "fecha_partido", "pregunta_extra", "pregunta_partido_id"
+    ]:
+        st.session_state.pop(k, None)
+
     st.switch_page("pages/menu_predicciones.py")
