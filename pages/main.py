@@ -138,6 +138,40 @@ if not partidos:
 
 today = date.today()
 
+st.markdown(
+    """
+    <style>
+    /* Estilo general de tablas HTML */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    /* Encabezados */
+    table thead th {
+        background-color: #e5e7eb;
+        color: #111827 !important;
+        font-weight: 600;
+        text-align: center;
+        padding: 8px;
+        border-bottom: 2px solid #9ca3af;
+    }
+
+    /* Celdas */
+    table tbody td {
+        text-align: center;
+        padding: 8px;
+        border-bottom: 1px solid #d1d5db;
+    }
+
+    /* Hover */
+    table tbody tr:hover {
+        background-color: #f3f4f6;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 # -------------------------
 # SEMANAS
 # -------------------------
