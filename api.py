@@ -77,7 +77,7 @@ def save_next_games():
             continue
 
         supabase.table("partidos").upsert([{
-            "partido_id": g.get("idEvent"),
+            "id_partido": g.get("idEvent"),
             "external_id": g.get("idEvent"),
             "semana": g.get("intRound"),
             "fecha": g.get("dateEvent"),
@@ -87,7 +87,7 @@ def save_next_games():
             "away_badge_url": g.get("strAwayTeamBadge"),
             "estadio": g.get("strVenue"),
             "status": g.get("strStatus") or "NS"
-        }], on_conflict=["partido_id"]).execute()
+        }], on_conflict=["id_partido"]).execute()
 
     return events
 
