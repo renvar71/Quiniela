@@ -1,9 +1,7 @@
 # app.py
 import streamlit as st
-import hashlib
 from db import (
     supabase,
-    get_user_id,
     hash_password,
 )
 from api import save_teams, save_next_games
@@ -27,6 +25,9 @@ st.set_page_config(initial_sidebar_state="collapsed")
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
+if "user_id" not in st.session_state:
+    st.session_state.user_id = None
+
 # -------------------------
 # AUTH HELPERS
 # -------------------------
@@ -38,9 +39,13 @@ def authenticate_user(email, password):
         .execute()
 
     if not res.data:
-        return False
+        return None
 
-    return res.data["password_hash"] == hash_password(password)
+    if res.data["password_hash"] == hash_password(password):
+        return res.data["id"]
+
+    return None
+
 
 def add_user(nombre, email, password):
     try:
@@ -73,9 +78,12 @@ if not st.session_state.logged_in:
         password = st.text_input("Contraseña", type="password")
 
         if st.button("Entrar"):
-            if authenticate_user(email, password):
+            user_id = authenticate_user(email, password)
+
+            if user_id:
                 st.session_state.logged_in = True
                 st.session_state.user = email
+                st.session_state.user_id = user_id
                 st.rerun()
             else:
                 st.error("Credenciales incorrectas")
@@ -101,6 +109,7 @@ st.sidebar.success(f"Bienvenid@ {st.session_state.user}")
 def logout():
     st.session_state.logged_in = False
     st.session_state.user = None
+    st.session_state.user_id = None
 
 if st.sidebar.button("Cerrar sesión"):
     logout()
