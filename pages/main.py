@@ -2,13 +2,14 @@ import streamlit as st
 from datetime import datetime, date
 import pandas as pd
 import requests
+
 from supabase_config import supabase
 from db import get_prediccion_status, WEEK_TITLES
 
-API_KEY = "TU_API_KEY"  # reemplaza con tu API_KEY de NFL
-LEAGUE_ID = "4391"      # NFL
+API_KEY = "TU_API_KEY"
+LEAGUE_ID = "4391"  # NFL
 
-st.set_page_config(page_title="🏈 QUINIELA NFL 🏈")
+st.set_page_config(page_title="🏈 QUINIELA NFL 🏈", layout="wide")
 
 # -------------------------
 # SESSION CHECK
@@ -16,6 +17,8 @@ st.set_page_config(page_title="🏈 QUINIELA NFL 🏈")
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.warning("Debes iniciar sesión")
     st.stop()
+
+USER_ID = st.session_state.user_id
 
 st.title("🏈 QUINIELA NFL 🏈")
 
@@ -36,123 +39,140 @@ with col2:
 st.divider()
 
 # -------------------------
-# CSS GLOBAL PARA TABLAS
+# CSS
 # -------------------------
 st.markdown("""
 <style>
-table {width: 100%; border-collapse: collapse; table-layout: fixed;}
-th, td {text-align: center; vertical-align: middle; padding: 6px; font-size: 14px;}
-th {font-weight: bold; background-color: #f0f0f0; color: #000; white-space: nowrap;}
+table {width: 100%; border-collapse: collapse;}
+th, td {text-align: center; padding: 6px; font-size: 14px;}
+th {background-color: #f0f0f0;}
 td img {display: block; margin: 0 auto;}
 </style>
 """, unsafe_allow_html=True)
 
 # ======================================================
-# 1️⃣ Poblar equipos automáticamente desde la API
+# 1️⃣ CARGAR EQUIPOS (solo si no existen)
 # ======================================================
-res = supabase.table("equipos").select("*").limit(1).execute()
+res = supabase.table("equipos").select("team_id").limit(1).execute()
+
 if not res.data:
     try:
-        r = requests.get(f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookup_all_teams.php?id={LEAGUE_ID}")
+        r = requests.get(
+            f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookup_all_teams.php?id={LEAGUE_ID}"
+        )
         teams = r.json().get("teams", [])
+
         for t in teams:
-            equipo = {
+            supabase.table("equipos").upsert({
                 "team_id": t["idTeam"],
                 "nombre": t["strTeam"],
                 "badge_url": t.get("strTeamBadge"),
                 "logo_url": t.get("strTeamLogo")
-            }
-            supabase.table("equipos").upsert(equipo, on_conflict=["team_id"]).execute()
+            }, on_conflict="team_id").execute()
+
         st.success("✅ Equipos cargados")
     except Exception as e:
         st.error(f"Error cargando equipos: {e}")
 
 # ======================================================
-# 2️⃣ Poblar partidos automáticamente desde la API
+# 2️⃣ CARGAR PARTIDOS (solo si no existen)
 # ======================================================
-res = supabase.table("partidos").select("*").limit(1).execute()
+res = supabase.table("partidos").select("partido_id").limit(1).execute()
+
 if not res.data:
     try:
-        r = requests.get(f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventsnextleague.php?id={LEAGUE_ID}")
+        r = requests.get(
+            f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventsnextleague.php?id={LEAGUE_ID}"
+        )
         events = r.json().get("events", [])
+
         for e in events:
-            partido = {
-                "external_id": e["idEvent"],
+            fecha_iso = None
+            if e.get("dateEvent") and e.get("strTime"):
+                fecha_iso = f"{e['dateEvent']}T{e['strTime']}"
+
+            supabase.table("partidos").upsert({
+                "partido_id": e["idEvent"],
                 "semana": int(e.get("intRound") or 0),
-                "fecha": e["dateEvent"] + "T" + e["strTime"],
+                "fecha": fecha_iso,
                 "equipo_local_id": e["idHomeTeam"],
                 "equipo_visitante_id": e["idAwayTeam"],
                 "home_badge_url": e.get("strHomeTeamBadge"),
                 "away_badge_url": e.get("strAwayTeamBadge"),
-                "tipo": "regular"
-            }
-            supabase.table("partidos").upsert(partido, on_conflict=["external_id"]).execute()
+                "status": "scheduled"
+            }, on_conflict="partido_id").execute()
+
         st.success("✅ Partidos cargados")
     except Exception as e:
         st.error(f"Error cargando partidos: {e}")
 
 # ======================================================
-# 3️⃣ Obtener todos los partidos de Supabase
+# 3️⃣ OBTENER PARTIDOS
 # ======================================================
-partidos_res = supabase.table("partidos").select("*").execute()
-partidos = partidos_res.data
+res = supabase.table("partidos").select("*").execute()
+partidos = res.data or []
+
+if not partidos:
+    st.info("No hay partidos disponibles")
+    st.stop()
 
 today = date.today()
 
 # -------------------------
-# Determinar semana actual y previa
+# SEMANAS
 # -------------------------
-valid_weeks = [p["semana"] for p in partidos if p["fecha"] and p["semana"] is not None and datetime.fromisoformat(p["fecha"]).date() <= today]
-prev_week = max(valid_weeks) if valid_weeks else None
+past_weeks = [
+    p["semana"] for p in partidos
+    if p.get("fecha")
+    and p.get("semana") is not None
+    and datetime.fromisoformat(p["fecha"]).date() <= today
+]
 
-current_week = max([p["semana"] for p in partidos if p["semana"] is not None])
+prev_week = max(past_weeks) if past_weeks else None
+current_week = max(p["semana"] for p in partidos if p.get("semana") is not None)
 
 # ======================================================
 # RESULTADOS SEMANA ANTERIOR
 # ======================================================
-if prev_week is not None:
-    st.subheader(f"Resultados Semana {prev_week}")
-else:
-    st.subheader("Resultados recientes")
+st.subheader(
+    f"Resultados Semana {prev_week}" if prev_week is not None else "Resultados recientes"
+)
 
 partidos_prev = [p for p in partidos if p["semana"] == prev_week]
-partidos_prev.sort(key=lambda x: x["fecha"] or "9999-12-31")
 
 data_prev = []
 for p in partidos_prev:
-    home_badge = p.get("home_badge_url")
-    away_badge = p.get("away_badge_url")
-    status = p.get("status", "scheduled")
-    resultado = "—"  # opcional, si quieres mostrar marcador real
-
     data_prev.append({
-        "Local": f'<img src="{home_badge}" width="40">' if home_badge else "",
-        "Resultado": resultado,
-        "Visitante": f'<img src="{away_badge}" width="40">' if away_badge else "",
-        "Estado": status
+        "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
+        "Resultado": "—",
+        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
+        "Estado": p.get("status", "scheduled")
     })
 
-df_prev = pd.DataFrame(data_prev)
-st.markdown(df_prev.to_html(escape=False, index=False), unsafe_allow_html=True)
+if data_prev:
+    df_prev = pd.DataFrame(data_prev)
+    st.markdown(df_prev.to_html(escape=False, index=False), unsafe_allow_html=True)
+else:
+    st.info("Sin resultados previos")
 
 # ======================================================
 # PARTIDOS SEMANA ACTUAL
 # ======================================================
-st.subheader(WEEK_TITLES.get(current_week, f"Round / Semana {current_week}"))
+st.subheader(WEEK_TITLES.get(current_week, f"Semana {current_week}"))
 
 partidos_next = [p for p in partidos if p["semana"] == current_week]
-partidos_next.sort(key=lambda x: x["fecha"] or "9999-12-31")
 
 data_next = []
 for p in partidos_next:
-    home_badge = p.get("home_badge_url")
-    away_badge = p.get("away_badge_url")
-    status = p.get("status", "scheduled")
     fecha_db = p.get("fecha")
 
-    estado_pred = get_prediccion_status(st.session_state.user, p["partido_id"], fecha_db)
+    estado_pred = get_prediccion_status(
+        USER_ID,
+        p["partido_id"],
+        fecha_db
+    )
 
-    fecha_fmt = "To be defined"
+    fecha_fmt = "Por definir"
     if fecha_db:
         try:
             fecha_fmt = datetime.fromisoformat(fecha_db).strftime("%d %b %Y")
@@ -161,10 +181,10 @@ for p in partidos_next:
 
     data_next.append({
         "Fecha": fecha_fmt,
-        "Local": f'<img src="{home_badge}" width="40">' if home_badge else "",
+        "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
         "vs": "vs",
-        "Visitante": f'<img src="{away_badge}" width="40">' if away_badge else "",
-        "Estado": status,
+        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
+        "Estado": p.get("status", "scheduled"),
         "Predicción": estado_pred
     })
 
