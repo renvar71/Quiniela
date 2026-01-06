@@ -42,8 +42,9 @@ for p in partidos:
     partido_id = p["partido_id"]
     semana = p["semana"]
     fecha = p["fecha"]
-    local = p["equipos"]["nombre"]
-    visitante = p["equipos_1"]["nombre"]
+    local = p["local"]["nombre"]
+    visitante = p["visitante"]["nombre"]
+
 
     estado = get_prediccion_status(user_id, partido_id, fecha)
 
