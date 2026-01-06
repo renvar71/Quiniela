@@ -220,3 +220,15 @@ def save_puntaje(usuario_id, id_partido, semana, puntos):
         "semana": semana,
         "puntos": puntos
     }, on_conflict="usuario_id,id_partido").execute()
+
+# -------------------------
+# RESULTADOS ADMIN (solo lectura)
+# -------------------------
+def get_resultado_admin(id_partido=None):
+    
+    query = supabase.table("resultados_admin").select("*")
+    if id_partido is not None:
+        query = query.eq("id_partido", id_partido)
+    res = query.execute()
+    return res.data or []
+
