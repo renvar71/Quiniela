@@ -1,3 +1,4 @@
+# menu_predicciones.py
 import streamlit as st
 from datetime import datetime
 from supabase_config import supabase
@@ -25,8 +26,10 @@ res = (
         partido_id,
         semana,
         fecha,
-        local:equipos!partidos_equipo_local_id_fkey(nombre),
-        visitante:equipos!partidos_equipo_visitante_id_fkey(nombre)
+        local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
+        visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, badge_url),
+        home_badge_url,
+        away_badge_url
         """
     )
     .order("fecha")
@@ -54,7 +57,7 @@ for p in partidos:
     estado = get_prediccion_status(user_id, partido_id, fecha)
 
     if estado == "🟡 Pendiente":
-        pendientes.append((partido_id, semana, fecha, local, visitante))
+        pendientes.append((partido_id, semana, fecha, local, visitante, p.get("home_badge_url"), p.get("away_badge_url")))
 
 # -------------------------
 # UI
@@ -65,7 +68,7 @@ st.markdown("*Selecciona un partido para registrar tu predicción*")
 if not pendientes:
     st.success("🎉 No tienes partidos pendientes")
 else:
-    for partido_id, semana, fecha, local, visitante in pendientes:
+    for partido_id, semana, fecha, local, visitante, home_badge_url, away_badge_url in pendientes:
         col1, col2, col3 = st.columns([1, 2, 1])
 
         with col2:
@@ -77,16 +80,19 @@ else:
                 # limpiar contexto previo
                 for k in [
                     "partido_id", "semana", "local",
-                    "visitante", "fecha_partido"
+                    "visitante", "fecha_partido",
+                    "home_badge_url", "away_badge_url"
                 ]:
                     st.session_state.pop(k, None)
 
-                # setear nuevo contexto
+                # setear nuevo contexto con badges incluidos
                 st.session_state.partido_id = partido_id
                 st.session_state.semana = semana
                 st.session_state.local = local
                 st.session_state.visitante = visitante
                 st.session_state.fecha_partido = fecha
+                st.session_state.home_badge_url = home_badge_url
+                st.session_state.away_badge_url = away_badge_url
 
                 st.switch_page("pages/prediccion_partido.py")
                 st.stop()
