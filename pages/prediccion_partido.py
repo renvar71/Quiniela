@@ -85,25 +85,32 @@ with st.form("form_prediccion"):
     col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
 
     with col1:
-        logo = f"logos/{local}.png"
-        if os.path.exists(logo):
-            st.image(logo, use_container_width=True)
-        st.markdown(f"<h4 style='text-align:center'>{local}</h4>", unsafe_allow_html=True)
-
-    with col3:
-        score_local = st.number_input("", 0, 100, 0, key="score_local")
-
-    with col4:
-        st.markdown("<h2 style='text-align:center'>:</h2>", unsafe_allow_html=True)
-
-    with col5:
-        score_away = st.number_input("", 0, 100, 0, key="score_away")
+        if home_badge_url:
+            st.markdown(
+                f'<div style="text-align:center">'
+                f'<img src="{home_badge_url}" width="80">'
+                f'</div>',
+                unsafe_allow_html=True
+            )
 
     with col2:
-        logo = f"logos/{visitante}.png"
-        if os.path.exists(logo):
-            st.image(logo, use_container_width=True)
-        st.markdown(f"<h4 style='text-align:center'>{visitante}</h4>", unsafe_allow_html=True)
+        score_local = st.number_input("", 0, 100, 0, key="score_local")
+
+    with col3:
+        st.markdown("<h2 style='text-align:center'>vs</h2>", unsafe_allow_html=True)
+        
+    with col4:
+        score_away = st.number_input("", 0, 100, 0, key="score_away")
+
+    with col5:
+        if away_badge_url:
+            st.markdown(
+                f'<div style="text-align:center">'
+                f'<img src="{away_badge_url}" width="80">'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+
 
     line = st.radio("Over / Under total puntos", ["Over", "Under"], horizontal=True)
 
