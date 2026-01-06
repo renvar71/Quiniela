@@ -36,13 +36,11 @@ badge_url = get_nfl_badge()
 # -------------------------
 # HEADER
 # -------------------------
-col1, col2, col3 = st.columns([1, 6, 1])
+col1, col2= st.columns([1, 6])
 with col1:
     st.image(badge_url, width=90)
 with col2:
     st.title("🏈 QUINIELA NFL 🏈")
-with col3:
-    st.image(badge_url, width=90)
 
 # -------------------------
 # NAV
