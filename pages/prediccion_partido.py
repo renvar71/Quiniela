@@ -1,15 +1,22 @@
+# prediccion_partido.py
 import streamlit as st
 import pandas as pd
 import random
 from datetime import datetime
+import os
 
 from db import save_prediccion
 
 # -------------------------
 # SESSION CHECK
 # -------------------------
-if "logged_in" not in st.session_state or not st.session_state.logged_in:
+if not st.session_state.get("logged_in"):
     st.warning("Debes iniciar sesión")
+    st.stop()
+
+user_id = st.session_state.get("user_id")
+if not user_id:
+    st.switch_page("pages/menu_predicciones.py")
     st.stop()
 
 # -------------------------
@@ -17,24 +24,23 @@ if "logged_in" not in st.session_state or not st.session_state.logged_in:
 # -------------------------
 required_keys = [
     "partido_id", "semana", "local",
-    "visitante", "fecha_partido", "user_id"
+    "visitante", "fecha_partido"
 ]
 
 if not all(st.session_state.get(k) is not None for k in required_keys):
     for k in required_keys:
         st.session_state.pop(k, None)
     st.switch_page("pages/menu_predicciones.py")
-
+    st.stop()
 
 partido_id = st.session_state.partido_id
 semana = st.session_state.semana
 local = st.session_state.local
 visitante = st.session_state.visitante
 fecha_partido = st.session_state.fecha_partido
-user_id = st.session_state.user_id
 
 # -------------------------
-# PREGUNTAS EXTRA (2 por partido)
+# PREGUNTAS EXTRA
 # -------------------------
 if (
     "preguntas_extra" not in st.session_state
@@ -50,27 +56,14 @@ if (
 pregunta_1, pregunta_2 = st.session_state.preguntas_extra
 
 # -------------------------
-# CSS BOTÓN FORM
-# -------------------------
-st.markdown("""
-<style>
-div[data-testid="stForm"] button {
-    background-color: #28a745;
-    color: white;
-}
-div[data-testid="stForm"] button:hover {
-    background-color: #218838;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# -------------------------
 # NAV BACK
 # -------------------------
 if st.button("⬅️ Volver"):
     for k in [
         "partido_id", "semana", "local", "visitante",
-        "fecha_partido", "preguntas_extra", "preguntas_partido_id"
+        "fecha_partido", "preguntas_extra",
+        "preguntas_partido_id", "score_local",
+        "score_away", "extra_1", "extra_2"
     ]:
         st.session_state.pop(k, None)
 
@@ -89,82 +82,47 @@ st.write(f"**{local} vs {visitante}**")
 # -------------------------
 with st.form("form_prediccion"):
 
-    # -------------------------
-# MARCADOR VISUAL
-# -------------------------
     col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
-    
+
     with col1:
-        st.image(
-            f"logos/{local}.png",  # o URL
-            use_container_width=True
-        )
+        logo = f"logos/{local}.png"
+        if os.path.exists(logo):
+            st.image(logo, use_container_width=True)
         st.markdown(f"<h4 style='text-align:center'>{local}</h4>", unsafe_allow_html=True)
-    
+
     with col3:
-        score_local = st.number_input(
-            "",
-            min_value=0,
-            max_value=100,
-            step=1,
-            key="score_local"
-        )
-    
+        score_local = st.number_input("", 0, 100, 0, key="score_local")
+
     with col4:
         st.markdown("<h2 style='text-align:center'>:</h2>", unsafe_allow_html=True)
-    
+
     with col5:
-        score_away = st.number_input(
-            "",
-            min_value=0,
-            max_value=100,
-            step=1,
-            key="score_away"
-        )
-    
+        score_away = st.number_input("", 0, 100, 0, key="score_away")
+
     with col2:
-        st.image(
-            f"logos/{visitante}.png",  # o URL
-            use_container_width=True
-        )
+        logo = f"logos/{visitante}.png"
+        if os.path.exists(logo):
+            st.image(logo, use_container_width=True)
         st.markdown(f"<h4 style='text-align:center'>{visitante}</h4>", unsafe_allow_html=True)
 
-
-    line = st.radio(
-        "Over / Under total puntos",
-        ["Over", "Under"],
-        horizontal=True
-    )
+    line = st.radio("Over / Under total puntos", ["Over", "Under"], horizontal=True)
 
     st.markdown("**Preguntas extra:**")
 
-    extra_1 = st.radio(
-        pregunta_1,
-        [local, visitante],
-        horizontal=True,
-        key="extra_1"
-    )
-
-    extra_2 = st.radio(
-        pregunta_2,
-        [local, visitante],
-        horizontal=True,
-        key="extra_2"
-    )
+    extra_1 = st.radio(pregunta_1, [local, visitante], horizontal=True, key="extra_1")
+    extra_2 = st.radio(pregunta_2, [local, visitante], horizontal=True, key="extra_2")
 
     submit = st.form_submit_button("Guardar Predicción")
 
 # -------------------------
 # SUBMIT
 # -------------------------
-
 if submit:
-    if score_local > score_away:
-        ganador = local
-    elif score_away > score_local:
-        ganador = visitante
-    else:
-        ganador = "Empate"
+    ganador = (
+        local if score_local > score_away
+        else visitante if score_away > score_local
+        else "Empate"
+    )
 
     save_prediccion(
         usuario_id=user_id,
@@ -183,10 +141,11 @@ if submit:
 
     for k in [
         "partido_id", "semana", "local", "visitante",
-        "fecha_partido", "preguntas_extra", "preguntas_partido_id"
+        "fecha_partido", "preguntas_extra",
+        "preguntas_partido_id", "score_local",
+        "score_away", "extra_1", "extra_2"
     ]:
         st.session_state.pop(k, None)
 
     st.switch_page("pages/menu_predicciones.py")
     st.stop()
-
