@@ -89,6 +89,8 @@ def cargar_partidos():
                     "equipo_visitante_id": e["idAwayTeam"],
                     "home_badge_url": e.get("strHomeTeamBadge"),
                     "away_badge_url": e.get("strAwayTeamBadge"),
+                    "score_local": e.get("intHomeScore"),
+                    "score_away": e.get("intAwayScore"),
                     "status": status
                 }, on_conflict="id_partido").execute()
         except Exception as e:
