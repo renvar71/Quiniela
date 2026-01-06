@@ -87,11 +87,11 @@ with st.form("form_prediccion"):
 
     # LOGO LOCAL
     with col1:
-        badge_url_local = team_badges.get(local)
-        if badge_url_local:
+        home_badge_url = st.session_state.get("home_badge_url") or ""
+        if home_badge_url:
             st.markdown(
                 f'<div style="text-align:center">'
-                f'<img src="{badge_url_local}" width="80">'
+                f'<img src="{home_badge_url}" width="80">'
                 f'</div>',
                 unsafe_allow_html=True
             )
@@ -110,11 +110,11 @@ with st.form("form_prediccion"):
 
     # LOGO VISITANTE
     with col5:
-        badge_url_away = team_badges.get(visitante)
-        if badge_url_away:
+        away_badge_url = st.session_state.get("away_badge_url") or ""
+        if away_badge_url:
             st.markdown(
                 f'<div style="text-align:center">'
-                f'<img src="{badge_url_away}" width="80">'
+                f'<img src="{away_badge_url}" width="80">'
                 f'</div>',
                 unsafe_allow_html=True
             )
@@ -126,8 +126,9 @@ with st.form("form_prediccion"):
     extra_1 = st.radio(pregunta_1, [local, visitante], horizontal=True, key="extra_1")
     extra_2 = st.radio(pregunta_2, [local, visitante], horizontal=True, key="extra_2")
 
-    # SUBMIT BUTTON ahora está dentro del form
+    # SUBMIT BUTTON
     submit = st.form_submit_button("Guardar Predicción")
+
 
 # -------------------------
 # SUBMIT
