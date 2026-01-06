@@ -6,9 +6,9 @@ import requests
 from supabase_config import supabase
 from db import get_prediccion_status, WEEK_TITLES
 
-API_KEY = "TU_API_KEY"
+#API_KEY = "TU_API_KEY"
 LEAGUE_ID = "4391"  # NFL
-API_URL = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookupleague.php"
+API_URL = f"https://www.thesportsdb.com/api/v1/json/609380/lookupleague.php"
 
 st.set_page_config(page_title="🏈 QUINIELA NFL 🏈", layout="wide")
 
