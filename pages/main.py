@@ -3,8 +3,9 @@ import streamlit as st
 from datetime import datetime, date
 import pandas as pd
 import requests
-from supabase_config import supabase
-from db import get_prediccion_status, WEEK_TITLES
+# Quitamos cliente Cambio 1
+# from supabase_config import supabase
+from db import get_prediccion_status, WEEK_TITLES, get_partidos, get_supabase
 
 # -------------------------
 # CONFIG
@@ -80,7 +81,8 @@ def cargar_partidos():
                     fecha_iso = f"{e['dateEvent']}T{e['strTime']}"
 
                 status = "finished" if tipo == "past" else "scheduled"
-
+                # Cambio 3
+                supabase = get_supabase()
                 supabase.table("partidos").upsert({
                     "id_partido": e["idEvent"],
                     "semana": int(e.get("intRound") or 0),
@@ -101,9 +103,10 @@ cargar_partidos()
 # ======================================================
 # OBTENER PARTIDOS
 # ======================================================
+# Cambio 2
+supabase = get_supabase()
 res = supabase.table("partidos").select("*").execute()
 partidos = res.data or []
-
 if not partidos:
     st.info("No hay partidos disponibles")
     st.stop()
