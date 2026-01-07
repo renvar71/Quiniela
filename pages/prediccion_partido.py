@@ -119,24 +119,6 @@ with st.form("form_prediccion"):
     extra_1 = st.radio(pregunta_1, [st.session_state.local, st.session_state.visitante], horizontal=True, key="extra_1")
     extra_2 = st.radio(pregunta_2, [st.session_state.local, st.session_state.visitante], horizontal=True, key="extra_2")
 
-    # BOTÓN DE SUBMIT
-    submit = st.form_submit_button("Guardar Predicción")
-
-    # st.markdown("**Preguntas extra:**")
-    # extra_1 = st.radio(
-    #     pregunta_1,
-    #     [local, visitante],
-    #     index=0 if not edit_mode else [local, visitante].index(pred["extra_question_1"]),
-    #     key="extra_1"
-    # )
-
-    # extra_2 = st.radio(
-    #     pregunta_2,
-    #     [local, visitante],
-    #     index=0 if not edit_mode else [local, visitante].index(pred["extra_question_2"]),
-    #     key="extra_2"
-    # )
-
     submit = st.form_submit_button(
         "Actualizar Predicción" if edit_mode else "Guardar Predicción"
     )
