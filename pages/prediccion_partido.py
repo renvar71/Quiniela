@@ -52,19 +52,14 @@ if (
 
 pregunta_1, pregunta_2 = st.session_state.preguntas_extra
 
+if st.button("🔙 Volver"):
+    st.switch_page("pages/menu_predicciones.py")
 # -------------------------
 # UI
 # -------------------------
 st.title("✏️ Editar predicción" if edit_mode else "🎯 Registrar predicción")
 st.subheader(WEEK_TITLES.get(semana, f"Semana {semana}"))
 st.write(f"**{local} vs {visitante}**")
-
-if st.button("🔙 Volver"):
-    # # Limpiamos solo variables relacionadas con la predicción actual, si quieres
-    # for k in list(st.session_state.keys()):
-    #     if k not in ["logged_in", "user_id"]:
-    #         st.session_state.pop(k)
-    st.switch_page("pages/menu_predicciones.py")
 
 # -------------------------
 # FORM
