@@ -1,8 +1,8 @@
 # api.py
 import requests
 import streamlit as st
-from db import supabase
-
+#from db import supabase
+from db import get_supabase()
 API_KEY = "609380"
 LEAGUE_ID = 4391
 
@@ -47,7 +47,7 @@ def save_teams():
         # Validar datos antes de insertar
         if not team_id or not nombre or not badge:
             continue
-
+        supabase = get_supabase()
         supabase.table("equipos").upsert([{
             "team_id": team_id,
             "nombre": nombre,
@@ -75,7 +75,7 @@ def save_next_games():
     for g in events:
         if not g.get("idEvent") or not g.get("idHomeTeam") or not g.get("idAwayTeam"):
             continue
-
+        supabase = get_supabase()
         supabase.table("partidos").upsert([{
             "id_partido": g.get("idEvent"),
             "external_id": g.get("idEvent"),
@@ -93,5 +93,6 @@ def save_next_games():
 
 def get_team_id_by_name(name):
     """Devuelve el team_id dado el nombre del equipo."""
+    supabase = get_supabase()
     res = supabase.table("equipos").select("team_id").eq("nombre", name).single().execute()
     return res.data["team_id"] if res.data else None
