@@ -36,6 +36,9 @@ scores = scores_res.data or []
 # -------------------------
 semanas_disponibles = sorted({s["semana"] for s in scores if s["puntos"] is not None})
 
+# Orden manual de las columnas para la vista general
+orden_columnas = [160, 125, 150, 200]  # Ronda Comodines, Ronda Divisional, Campeón de Conferencia, Super Bowl
+
 # -------------------------
 # SELECTBOX VISTA
 # -------------------------
@@ -66,8 +69,8 @@ def calcular_posiciones(df):
 # VISTA GENERAL O POR SEMANA
 # -------------------------
 if vista == "General":
-    # Tomar todas las semanas posibles según WEEK_TITLES
-    todas_semanas = sorted(WEEK_TITLES.keys())
+    # Usar orden manual
+    todas_semanas = orden_columnas
 
     data = []
     for u in users:
@@ -80,12 +83,11 @@ if vista == "General":
             )
             total += puntos_semana
             col_name = WEEK_TITLES.get(semana, f"Semana {semana}")
-            row[col_name] = puntos_semana  # Si no hay puntajes, suma = 0 automáticamente
+            row[col_name] = puntos_semana
         row["Total"] = total
         data.append(row)
 
     df = pd.DataFrame(data)
-    # Ordenar por Total
     df = df.sort_values(by="Total", ascending=False).reset_index(drop=True)
     df = calcular_posiciones(df)
 
