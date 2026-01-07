@@ -1,170 +1,130 @@
 #menu_predicciones
 import streamlit as st
-from datetime import datetime, date
-import pandas as pd
-import requests
 from supabase_config import supabase
-from db import get_prediccion_status, WEEK_TITLES
-
-# -------------------------
-# CONFIG
-# -------------------------
-LEAGUE_ID = "4391"  # NFL
-API_KEY = 609380  # Reemplaza con tu API Key
-API_URL = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookupleague.php"
-
-st.set_page_config(page_title="🏈 QUINIELA NFL 🏈", layout="wide")
+from db import get_prediccion_status, get_prediccion_by_user
 
 # -------------------------
 # SESSION CHECK
 # -------------------------
-if "logged_in" not in st.session_state or not st.session_state.logged_in:
+if not st.session_state.get("logged_in"):
     st.warning("Debes iniciar sesión")
     st.stop()
 
-USER_ID = st.session_state.user_id
-
-# -------------------------
-# NFL LEAGUE BADGE
-# -------------------------
-@st.cache_data
-def get_nfl_badge():
-    r = requests.get(API_URL, params={"id": LEAGUE_ID}, timeout=10)
-    r.raise_for_status()
-    data = r.json()
-    return data["leagues"][0]["strBadge"]
-
-badge_url = get_nfl_badge()
-
-# -------------------------
-# HEADER
-# -------------------------
-col1, col2 = st.columns([1, 6])
-with col1:
-    st.image(badge_url, width=90)
-with col2:
-    st.title("🏈 QUINIELA NFL 🏈")
-
-st.divider()
-
-# -------------------------
-# CSS
-# -------------------------
-st.markdown("""
-<style>
-table {width: 100%; border-collapse: collapse;}
-th, td {text-align: center; padding: 6px; font-size: 14px;}
-th {background-color: #f0f0f0;}
-td img {display: block; margin: 0 auto;}
-</style>
-""", unsafe_allow_html=True)
-
-# ======================================================
-# CARGAR PARTIDOS (pasados y futuros)
-# ======================================================
-def cargar_partidos():
-    endpoints = [
-        ("past", f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventspastleague.php?id={LEAGUE_ID}"),
-        ("next", f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventsnextleague.php?id={LEAGUE_ID}")
-    ]
-
-    for tipo, url in endpoints:
-        try:
-            r = requests.get(url, timeout=10)
-            r.raise_for_status()
-            events = r.json().get("events", [])
-
-            for e in events:
-                fecha_iso = None
-                if e.get("dateEvent") and e.get("strTime"):
-                    fecha_iso = f"{e['dateEvent']}T{e['strTime']}"
-
-                status = "finished" if tipo == "past" else "scheduled"
-
-                supabase.table("partidos").upsert({
-                    "id_partido": e["idEvent"],
-                    "semana": int(e.get("intRound") or 0),
-                    "fecha": fecha_iso,
-                    "equipo_local_id": e["idHomeTeam"],
-                    "equipo_visitante_id": e["idAwayTeam"],
-                    "home_badge_url": e.get("strHomeTeamBadge"),
-                    "away_badge_url": e.get("strAwayTeamBadge"),
-                    "score_local": e.get("intHomeScore"),
-                    "score_away": e.get("intAwayScore"),
-                    "status": status
-                }, on_conflict="id_partido").execute()
-        except Exception as e:
-            st.error(f"Error cargando partidos {tipo}: {e}")
-
-cargar_partidos()
-
-# ======================================================
-# OBTENER PARTIDOS
-# ======================================================
-res = supabase.table("partidos").select("*").execute()
-partidos = res.data or []
-
-if not partidos:
-    st.info("No hay partidos disponibles")
+user_id = st.session_state.get("user_id")
+if not user_id:
     st.stop()
 
-# ======================================================
-# FILTRAR POR SEMANA MÁS GRANDE
-# ======================================================
-max_semana = max(p.get("semana", 0) for p in partidos)
-partidos_semana_max = [p for p in partidos if p.get("semana") == max_semana]
+# -------------------------
+# CONTEXT + NAV
+# -------------------------
+def _set_context_and_go(p):
+    for k in [
+        "id_partido", "semana", "local", "visitante",
+        "fecha_partido", "home_badge_url", "away_badge_url",
+        "edit_mode", "prediccion_actual"
+    ]:
+        st.session_state.pop(k, None)
 
-st.markdown(f"### Mostrando predicciones de la semana {max_semana}")
+    st.session_state.id_partido = p["id_partido"]
+    st.session_state.semana = p["semana"]
+    st.session_state.local = p["local"]
+    st.session_state.visitante = p["visitante"]
+    st.session_state.fecha_partido = p["fecha"]
+    st.session_state.home_badge_url = p["home_badge_url"]
+    st.session_state.away_badge_url = p["away_badge_url"]
 
-# ======================================================
-# PARTIDOS FUTUROS (pendientes)
-# ======================================================
-futuros = [p for p in partidos_semana_max if p.get("status") == "scheduled"]
+    st.session_state.edit_mode = bool(p["prediccion"])
+    st.session_state.prediccion_actual = p["prediccion"]
 
-data_futuros = []
-for p in futuros:
-    fecha_db = p.get("fecha")
-    estado_pred = get_prediccion_status(USER_ID, p["id_partido"], fecha_db)
-    fecha_fmt = "Por definir"
-    if fecha_db:
-        try:
-            fecha_fmt = datetime.fromisoformat(fecha_db).strftime("%d %b %Y")
-        except ValueError:
-            pass
+    st.switch_page("pages/prediccion_partido.py")
+    st.stop()
+# -------------------------
+# OBTENER PARTIDOS
+# -------------------------
+res = (
+    supabase
+    .table("partidos")
+    .select(
+        """
+        id_partido,
+        semana,
+        fecha,
+        local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
+        visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, badge_url),
+        home_badge_url,
+        away_badge_url
+        """
+    )
+    .order("fecha")
+    .execute()
+)
 
-    data_futuros.append({
-        "Fecha": fecha_fmt,
-        "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
-        "vs": "vs",
-        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
-        "Estado": p.get("status", "scheduled"),
-        "Predicción": estado_pred
-    })
+partidos = res.data or []
 
-if data_futuros:
-    df_futuros = pd.DataFrame(data_futuros)
-    st.subheader("Predicciones pendientes")
-    st.markdown(df_futuros.to_html(escape=False, index=False), unsafe_allow_html=True)
-else:
-    st.info("No hay predicciones pendientes para esta semana")
+pendientes = []
+completados = []
 
-# ======================================================
-# PARTIDOS COMPLETADOS
-# ======================================================
-completados = [p for p in partidos_semana_max if p.get("status") == "finished"]
+for p in partidos:
+    id_partido = p.get("id_partido")
+    semana = p.get("semana")
+    fecha = p.get("fecha")
+    local = p.get("local", {}).get("nombre")
+    visitante = p.get("visitante", {}).get("nombre")
 
-data_completados = []
-for p in completados:
-    data_completados.append({
-        "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
-        "Resultado": f"{p.get('score_local', 0)} - {p.get('score_away', 0)}",
-        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
-        "Estado": p.get("status", "finished")
-    })
+    if not id_partido or not local or not visitante:
+        continue
 
-if data_completados:
-    df_completados = pd.DataFrame(data_completados)
-    st.subheader("Predicciones completadas")
-    st.markdown(df_completados.to_html(escape=False, index=False), unsafe_allow_html=True)
-else:
-    st.info("Los partidos de esta semana aún no se han completado")
+    estado = get_prediccion_status(user_id, id_partido, fecha)
+    prediccion = get_prediccion_by_user(user_id, id_partido)
+
+    item = {
+        "id_partido": id_partido,
+        "semana": semana,
+        "fecha": fecha,
+        "local": local,
+        "visitante": visitante,
+        "home_badge_url": p.get("home_badge_url"),
+        "away_badge_url": p.get("away_badge_url"),
+        "prediccion": prediccion
+    }
+
+    if estado == "🟡 Pendiente":
+        pendientes.append(item)
+    else:
+        completados.append(item)
+
+# -------------------------
+# UI
+# -------------------------
+st.title("📋 Partidos")
+col_pend, col_comp = st.columns(2)
+
+# -------------------------
+# PENDIENTES
+# -------------------------
+with col_pend:
+    st.subheader("🟡 Pendientes")
+
+    if not pendientes:
+        st.info("No tienes partidos pendientes")
+
+    for p in pendientes:
+        label = f"{p['local']} vs {p['visitante']}"
+
+        if st.button(label, key=f"pend_{p['id_partido']}", use_container_width=True):
+            _set_context_and_go(p)
+
+# -------------------------
+# COMPLETADOS
+# -------------------------
+with col_comp:
+    st.subheader("🟢 Completados")
+    st.markdown("*Selecciona el partido que quieras editar*")
+    if not completados:
+        st.info("¡Registra tu primera predicción!")
+
+    for p in completados:
+        label = f"{p['local']} vs {p['visitante']}"
+
+        if st.button(label, key=f"comp_{p['id_partido']}", use_container_width=True):
+            _set_context_and_go(p)
