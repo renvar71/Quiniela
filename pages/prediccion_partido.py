@@ -19,6 +19,8 @@ if not user_id:
     st.switch_page("pages/menu_predicciones.py")
     st.stop()
 
+if "prediccion_enviada" not in st.session_state:
+    st.session_state.prediccion_enviada = False
 # -------------------------
 # VALIDAR CONTEXTO REAL
 # -------------------------
@@ -196,10 +198,9 @@ if submit:
     for k in [
         "id_partido", "semana", "local", "visitante",
         "fecha_partido", "preguntas_extra",
-        "preguntas_id_partido", "resultado_admin",
-        "resultado_admin_id", "score_local",
-        "score_away", "extra_1", "extra_2",
-        "prediccion_enviada"
+        "preguntas_id_partido",
+        "score_local", "score_away",
+        "extra_1", "extra_2"
     ]:
         st.session_state.pop(k, None)
 
