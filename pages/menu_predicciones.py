@@ -1,8 +1,11 @@
 # menu_predicciones.py
 import streamlit as st
 from datetime import datetime
-from supabase_config import supabase
-from db import get_prediccion_status
+
+from db import (
+    get_partidos,
+    get_prediccion_status
+)
 
 # -------------------------
 # SESSION CHECK
@@ -16,27 +19,9 @@ if not user_id:
     st.stop()
 
 # -------------------------
-# OBTENER PARTIDOS
+# OBTENER PARTIDOS (VÍA DB)
 # -------------------------
-res = (
-    supabase
-    .table("partidos")
-    .select(
-        """
-        id_partido,
-        semana,
-        fecha,
-        local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
-        visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, badge_url),
-        home_badge_url,
-        away_badge_url
-        """
-    )
-    .order("fecha")
-    .execute()
-)
-
-partidos = res.data or []
+partidos = get_partidos()
 
 # -------------------------
 # FILTRAR PENDIENTES
@@ -48,8 +33,11 @@ for p in partidos:
     semana = p.get("semana")
     fecha = p.get("fecha")
 
-    local = p.get("local", {}).get("nombre")
-    visitante = p.get("visitante", {}).get("nombre")
+    local = p.get("equipo_local")
+    visitante = p.get("equipo_visitante")
+
+    home_badge_url = p.get("home_badge_url")
+    away_badge_url = p.get("away_badge_url")
 
     if not id_partido or not local or not visitante:
         continue
@@ -57,7 +45,17 @@ for p in partidos:
     estado = get_prediccion_status(user_id, id_partido, fecha)
 
     if estado == "🟡 Pendiente":
-        pendientes.append((id_partido, semana, fecha, local, visitante, p.get("home_badge_url"), p.get("away_badge_url")))
+        pendientes.append(
+            (
+                id_partido,
+                semana,
+                fecha,
+                local,
+                visitante,
+                home_badge_url,
+                away_badge_url
+            )
+        )
 
 # -------------------------
 # UI
@@ -68,7 +66,16 @@ st.markdown("*Selecciona un partido para registrar tu predicción*")
 if not pendientes:
     st.success("🎉 No tienes partidos pendientes")
 else:
-    for id_partido, semana, fecha, local, visitante, home_badge_url, away_badge_url in pendientes:
+    for (
+        id_partido,
+        semana,
+        fecha,
+        local,
+        visitante,
+        home_badge_url,
+        away_badge_url
+    ) in pendientes:
+
         col1, col2, col3 = st.columns([1, 2, 1])
 
         with col2:
@@ -79,13 +86,17 @@ else:
             ):
                 # limpiar contexto previo
                 for k in [
-                    "id_partido", "semana", "local",
-                    "visitante", "fecha_partido",
-                    "home_badge_url", "away_badge_url"
+                    "id_partido",
+                    "semana",
+                    "local",
+                    "visitante",
+                    "fecha_partido",
+                    "home_badge_url",
+                    "away_badge_url",
                 ]:
                     st.session_state.pop(k, None)
 
-                # setear nuevo contexto con badges incluidos
+                # setear nuevo contexto
                 st.session_state.id_partido = id_partido
                 st.session_state.semana = semana
                 st.session_state.local = local
