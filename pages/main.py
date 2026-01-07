@@ -150,7 +150,7 @@ for p in futuros:
         "Fecha": fecha_fmt,
         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
         "vs": "vs",
-        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else ""
+        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
         #"Estado": p.get("status", "scheduled"),
         "Predicción": estado_pred
     })
