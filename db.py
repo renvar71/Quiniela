@@ -232,3 +232,23 @@ def get_resultado_admin(id_partido=None):
     res = query.execute()
     return res.data or []
 
+# -------------------------
+# PREDICCION DE USUARIO PARA HABILITAR EL CAMBIO DE PREDICCIÓN
+# -------------------------
+
+def get_prediccion_by_user(usuario_id, id_partido):
+    res = (
+        supabase
+        .table("predicciones")
+        .select("*")
+        .eq("usuario_id", usuario_id)
+        .eq("id_partido", id_partido)
+        .limit(1)
+        .execute()
+    )
+
+    if res.data:
+        return res.data[0]
+
+    return None
+
