@@ -4,7 +4,7 @@ import streamlit as st
 
 from db import (
     save_team,
-    upsert_partidos,
+    save_partido,
     get_team_id_by_name
 )
 
@@ -90,6 +90,6 @@ def save_next_games():
         })
 
     if partidos:
-        upsert_partidos(partidos)
+        save_partido(partidos)
 
     return events
