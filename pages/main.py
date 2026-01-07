@@ -129,7 +129,7 @@ max_semana = max(p.get("semana", 0) for p in partidos)
 partidos_semana_max = [p for p in partidos if p.get("semana") == max_semana]
 
 semana_nombre = WEEK_TITLES.get(max_semana, f"{max_semana}")
-st.markdown(f"{semana_nombre}")
+st.subheader(f"{semana_nombre}")
 
 # ======================================================
 # PARTIDOS FUTUROS
