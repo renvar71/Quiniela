@@ -1,97 +1,95 @@
 # api.py
 import requests
 import streamlit as st
-from db import supabase
+
+from db import (
+    upsert_equipos,
+    upsert_partidos,
+    get_team_id_by_name
+)
 
 API_KEY = "609380"
 LEAGUE_ID = 4391
+
 
 @st.cache_data
 def get_team_badges():
     """Devuelve un diccionario {team_id: badge_url} para todos los equipos."""
     url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/search_all_teams.php?l=NFL"
-    r = requests.get(url)
+    r = requests.get(url, timeout=10)
 
     if r.status_code != 200:
         return {}
 
-    data = r.json()
-    teams = data.get("teams", [])
+    teams = r.json().get("teams", []) or []
 
-    badges = {}
-    for t in teams:
-        team_id = t.get("idTeam")
-        badge = t.get("strTeamBadge")
-        if team_id and badge:
-            badges[team_id] = badge
-
-    return badges
+    return {
+        t["idTeam"]: t["strTeamBadge"]
+        for t in teams
+        if t.get("idTeam") and t.get("strTeamBadge")
+    }
 
 
 def save_teams():
-    """Guarda los equipos en Supabase."""
+    """Obtiene equipos del API y los guarda en la BD."""
     url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/search_all_teams.php?l=NFL"
-    r = requests.get(url)
+    r = requests.get(url, timeout=10)
 
     if r.status_code != 200:
-        print("Error al obtener equipos:", r.status_code)
+        print("❌ Error al obtener equipos:", r.status_code)
         return
 
-    teams = r.json().get("teams", [])
+    teams = r.json().get("teams", []) or []
 
+    equipos = []
     for t in teams:
-        team_id = t.get("idTeam")
-        nombre = t.get("strTeam")
-        badge = t.get("strTeamBadge")
-
-        # Validar datos antes de insertar
-        if not team_id or not nombre or not badge:
+        if not t.get("idTeam") or not t.get("strTeam") or not t.get("strTeamBadge"):
             continue
 
-        supabase.table("equipos").upsert([{
-            "team_id": team_id,
-            "nombre": nombre,
-            "badge_url": badge
-        }], on_conflict=["team_id"]).execute()
+        equipos.append({
+            "team_id": t["idTeam"],
+            "nombre": t["strTeam"],
+            "badge_url": t["strTeamBadge"]
+        })
+
+    if equipos:
+        upsert_equipos(equipos)
 
 
 def save_next_games():
-    """Guarda los próximos partidos en Supabase usando IDs de equipos y badges."""
+    """Obtiene próximos partidos y los guarda en la BD."""
     url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventsnextleague.php?id={LEAGUE_ID}"
-    r = requests.get(url)
+    r = requests.get(url, timeout=10)
 
     if r.status_code != 200:
         print("⚠️ Error al obtener partidos:", r.status_code)
         return []
 
-    data = r.json() or {}
-    events = data.get("events")
+    events = (r.json() or {}).get("events") or []
 
-    # API aún sin agenda
     if not events:
-        print("⏳ Esperando agenda de próximos partidos...")
+        print("⏳ No hay partidos programados aún")
         return []
 
+    partidos = []
     for g in events:
         if not g.get("idEvent") or not g.get("idHomeTeam") or not g.get("idAwayTeam"):
             continue
 
-        supabase.table("partidos").upsert([{
-            "id_partido": g.get("idEvent"),
-            "external_id": g.get("idEvent"),
+        partidos.append({
+            "id_partido": g["idEvent"],
+            "external_id": g["idEvent"],
             "semana": g.get("intRound"),
             "fecha": g.get("dateEvent"),
-            "equipo_local_id": g.get("idHomeTeam"),
-            "equipo_visitante_id": g.get("idAwayTeam"),
+            "equipo_local_id": g["idHomeTeam"],
+            "equipo_visitante_id": g["idAwayTeam"],
             "home_badge_url": g.get("strHomeTeamBadge"),
             "away_badge_url": g.get("strAwayTeamBadge"),
             "estadio": g.get("strVenue"),
             "status": g.get("strStatus") or "NS"
-        }], on_conflict=["id_partido"]).execute()
+        })
+
+    if partidos:
+        upsert_partidos(partidos)
 
     return events
-
-def get_team_id_by_name(name):
-    """Devuelve el team_id dado el nombre del equipo."""
-    res = supabase.table("equipos").select("team_id").eq("nombre", name).single().execute()
-    return res.data["team_id"] if res.data else None
