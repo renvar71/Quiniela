@@ -15,6 +15,30 @@ if not user_id:
     st.stop()
 
 # -------------------------
+# CONTEXT + NAV
+# -------------------------
+def _set_context_and_go(p):
+    for k in [
+        "id_partido", "semana", "local", "visitante",
+        "fecha_partido", "home_badge_url", "away_badge_url",
+        "edit_mode", "prediccion_actual"
+    ]:
+        st.session_state.pop(k, None)
+
+    st.session_state.id_partido = p["id_partido"]
+    st.session_state.semana = p["semana"]
+    st.session_state.local = p["local"]
+    st.session_state.visitante = p["visitante"]
+    st.session_state.fecha_partido = p["fecha"]
+    st.session_state.home_badge_url = p["home_badge_url"]
+    st.session_state.away_badge_url = p["away_badge_url"]
+
+    st.session_state.edit_mode = bool(p["prediccion"])
+    st.session_state.prediccion_actual = p["prediccion"]
+
+    st.switch_page("pages/prediccion_partido.py")
+    st.stop()
+# -------------------------
 # OBTENER PARTIDOS
 # -------------------------
 res = (
@@ -107,27 +131,4 @@ with col_comp:
         if st.button(label, key=f"comp_{p['id_partido']}", use_container_width=True):
             _set_context_and_go(p)
 
-# -------------------------
-# CONTEXT + NAV
-# -------------------------
-def _set_context_and_go(p):
-    for k in [
-        "id_partido", "semana", "local", "visitante",
-        "fecha_partido", "home_badge_url", "away_badge_url",
-        "edit_mode", "prediccion_actual"
-    ]:
-        st.session_state.pop(k, None)
 
-    st.session_state.id_partido = p["id_partido"]
-    st.session_state.semana = p["semana"]
-    st.session_state.local = p["local"]
-    st.session_state.visitante = p["visitante"]
-    st.session_state.fecha_partido = p["fecha"]
-    st.session_state.home_badge_url = p["home_badge_url"]
-    st.session_state.away_badge_url = p["away_badge_url"]
-
-    st.session_state.edit_mode = bool(p["prediccion"])
-    st.session_state.prediccion_actual = p["prediccion"]
-
-    st.switch_page("pages/prediccion_partido.py")
-    st.stop()
