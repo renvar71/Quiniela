@@ -1,4 +1,7 @@
-from supabase_config import supabase
+# SE DEJA DE IMPORTAR GLOBALMENTE
+# from supabase_config import supabase
+# Buscamos que db.py reciba el cliente de manera dinámica y para esto instalamos el helper
+import streamlit as st
 from datetime import datetime, timedelta
 import hashlib
 
@@ -12,6 +15,17 @@ WEEK_TITLES = {
     200: "Super Bowl",
 }
 
+# -------------------------
+# NUEVA FUNCIÓN: Se agregara a practicamente todas las funciones
+# -------------------------
+def get_supabase():
+    """
+    Obtiene el cliente Supabase desde la sesión.
+    Falla explícitamente si no existe (mejor que errores silenciosos).
+    """
+    if "supabase" not in st.session_state:
+        raise RuntimeError("Supabase client no inicializado en session_state")
+    return st.session_state.supabase
 
 # -------------------------
 # HASH PASSWORD
@@ -23,6 +37,7 @@ def hash_password(password: str) -> str:
 # USUARIOS
 # -------------------------
 def get_user_id(email):
+    supabase = get_supabase()
     res = supabase.table("usuarios") \
         .select("id") \
         .eq("email", email) \
@@ -36,6 +51,7 @@ def get_user_id(email):
 
 def add_user(nombre, email, password):
     try:
+        supabase = get_supabase()
         supabase.table("usuarios").insert({
             "nombre": nombre,
             "email": email,
@@ -49,6 +65,7 @@ def add_user(nombre, email, password):
 # EQUIPOS
 # -------------------------
 def save_team(team_id, nombre, badge_url=None, logo_url=None):
+    supabase = get_supabase()
     supabase.table("equipos").upsert({
         "team_id": team_id,
         "nombre": nombre,
@@ -58,6 +75,7 @@ def save_team(team_id, nombre, badge_url=None, logo_url=None):
 
 
 def get_team_badges():
+    supabase = get_supabase()
     res = supabase.table("equipos") \
         .select("team_id, badge_url") \
         .execute()
@@ -71,6 +89,7 @@ def get_team_badges():
 # PARTIDOS
 # -------------------------
 def save_partido(partido: dict):
+    supabase = get_supabase()
     supabase.table("partidos").upsert(
         partido,
         on_conflict="id_partido"
@@ -78,6 +97,7 @@ def save_partido(partido: dict):
 
 
 def get_partidos(semana=None):
+    supabase = get_supabase()
     query = supabase.table("partidos") \
         .select("*") \
         .order("fecha", desc=False)
@@ -104,6 +124,7 @@ def save_prediccion(
     extra_question_1=None,
     extra_question_2=None
 ):
+    supabase = get_supabase()
     supabase.table("predicciones").upsert(
         {
             "usuario_id": usuario_id,
@@ -121,6 +142,7 @@ def save_prediccion(
     ).execute()
 # QUITAR DOBLE UPSERT
 def has_prediccion(usuario_id, id_partido):
+    supabase = get_supabase()
     res = supabase.table("predicciones") \
         .select("id") \
         .eq("usuario_id", usuario_id) \
@@ -146,6 +168,7 @@ def get_prediccion_status(usuario_id, id_partido, fecha_partido):
     # -------------------------
     # QUERY SEGURA
     # -------------------------
+    supabase = get_supabase()
     res = (
         supabase
         .table("predicciones")
@@ -197,6 +220,7 @@ def get_prediccion_status(usuario_id, id_partido, fecha_partido):
 # PUNTAJES
 # -------------------------
 def save_puntaje(usuario_id, id_partido, semana, puntos):
+    supabase = get_supabase()
     supabase.table("puntajes").upsert({
         "usuario_id": usuario_id,
         "id_partido": id_partido,
@@ -208,7 +232,7 @@ def save_puntaje(usuario_id, id_partido, semana, puntos):
 # RESULTADOS ADMIN (solo lectura)
 # -------------------------
 def get_resultado_admin(id_partido=None):
-    
+    supabase = get_supabase()
     query = supabase.table("resultados_admin").select("*")
     if id_partido is not None:
         query = query.eq("id_partido", id_partido)
@@ -220,6 +244,7 @@ def get_resultado_admin(id_partido=None):
 # -------------------------
 
 def get_prediccion_by_user(usuario_id, id_partido):
+    supabase = get_supabase()
     res = (
         supabase
         .table("predicciones")
