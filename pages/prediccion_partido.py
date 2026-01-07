@@ -1,10 +1,7 @@
-# prediccion_partido.py
+#prediccion_partido.py
 import streamlit as st
 import pandas as pd
 import random
-from datetime import datetime
-import os
-from api import get_team_badges
 from db import save_prediccion, WEEK_TITLES, get_resultado_admin
 
 # -------------------------
@@ -20,7 +17,7 @@ if not user_id:
     st.stop()
 
 # -------------------------
-# VALIDAR CONTEXTO REAL
+# VALIDAR CONTEXTO
 # -------------------------
 required_keys = [
     "id_partido", "semana", "local",
@@ -28,8 +25,6 @@ required_keys = [
 ]
 
 if not all(st.session_state.get(k) is not None for k in required_keys):
-    for k in required_keys:
-        st.session_state.pop(k, None)
     st.switch_page("pages/menu_predicciones.py")
     st.stop()
 
@@ -39,7 +34,9 @@ local = st.session_state.local
 visitante = st.session_state.visitante
 fecha_partido = st.session_state.fecha_partido
 
-team_badges = get_team_badges()
+edit_mode = st.session_state.get("edit_mode", False)
+pred = st.session_state.get("prediccion_actual")
+
 # -------------------------
 # PREGUNTAS EXTRA
 # -------------------------
@@ -49,7 +46,6 @@ if (
 ):
     df = pd.read_csv("preguntas.csv")
     preguntas = df["pregunta"].dropna().tolist()
-
     random.seed(id_partido)
     st.session_state.preguntas_extra = random.sample(preguntas, 2)
     st.session_state.preguntas_id_partido = id_partido
@@ -57,92 +53,64 @@ if (
 pregunta_1, pregunta_2 = st.session_state.preguntas_extra
 
 # -------------------------
-# NAV BACK
-# -------------------------
-if st.button("⬅️ Volver"):
-    for k in [
-        "id_partido", "semana", "local", "visitante",
-        "fecha_partido", "preguntas_extra",
-        "preguntas_id_partido", "score_local",
-        "score_away", "extra_1", "extra_2"
-    ]:
-        st.session_state.pop(k, None)
-
-    st.switch_page("pages/menu_predicciones.py")
-    st.stop()
-
-# -------------------------
 # UI
 # -------------------------
-st.title("🎯 Registrar predicción")
+st.title("✏️ Editar predicción" if edit_mode else "🎯 Registrar predicción")
 st.subheader(WEEK_TITLES.get(semana, f"Semana {semana}"))
 st.write(f"**{local} vs {visitante}**")
 
 # -------------------------
 # FORM
 # -------------------------
-# FORMULARIO
 with st.form("form_prediccion"):
 
     col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
 
-    # LOGO LOCAL
-    with col1:
-        home_badge_url = st.session_state.get("home_badge_url")
-        if home_badge_url:
-            st.markdown(
-                f'<div style="text-align:center">'
-                f'<img src="{home_badge_url}" width="80">'
-                f'</div>',
-                unsafe_allow_html=True
-            )
-
-    # SCORE LOCAL
     with col2:
-        score_local = st.number_input("", 0, 100, 0, key="score_local")
+        score_local = st.number_input(
+            "",
+            0,
+            100,
+            pred["score_local"] if edit_mode else 0,
+            key="score_local"
+        )
 
-    # SEPARADOR "vs"
-    with col3:
-        st.markdown("<h2 style='text-align:center'>vs</h2>", unsafe_allow_html=True)
-
-    # SCORE VISITANTE
     with col4:
-        score_away = st.number_input("", 0, 100, 0, key="score_away")
+        score_away = st.number_input(
+            "",
+            0,
+            100,
+            pred["score_away"] if edit_mode else 0,
+            key="score_away"
+        )
 
-    # LOGO VISITANTE
-    with col5:
-        away_badge_url = st.session_state.get("away_badge_url")
-        if away_badge_url:
-            st.markdown(
-                f'<div style="text-align:center">'
-                f'<img src="{away_badge_url}" width="80">'
-                f'</div>',
-                unsafe_allow_html=True
-            )
-
-    # OVER / UNDER
-    # id_partido ya viene de st.session_state
     resultado = get_resultado_admin(id_partido)
+    linea = resultado[0]["linea"] if resultado else "N/A"
 
-    if resultado:
-        linea = resultado[0]["linea"]
-    else:
-        st.write("No se encontró información del partido")
-        linea = "N/A"  # para evitar error si no hay valor
-    
-    line = st.radio(f"Over / Under total puntos ({linea})", ["Over", "Under"], horizontal=True)
+    line = st.radio(
+        f"Over / Under total puntos ({linea})",
+        ["Over", "Under"],
+        index=0 if not edit_mode else ["Over", "Under"].index(pred["line_over_under"])
+    )
 
-
-    # PREGUNTAS EXTRA
-    pregunta_1, pregunta_2 = st.session_state.preguntas_extra
     st.markdown("**Preguntas extra:**")
-    extra_1 = st.radio(pregunta_1, [st.session_state.local, st.session_state.visitante], horizontal=True, key="extra_1")
-    extra_2 = st.radio(pregunta_2, [st.session_state.local, st.session_state.visitante], horizontal=True, key="extra_2")
+    extra_1 = st.radio(
+        pregunta_1,
+        [local, visitante],
+        index=0 if not edit_mode else [local, visitante].index(pred["extra_question_1"]),
+        key="extra_1"
+    )
 
-    # BOTÓN DE SUBMIT
-    submit = st.form_submit_button("Guardar Predicción")
+    extra_2 = st.radio(
+        pregunta_2,
+        [local, visitante],
+        index=0 if not edit_mode else [local, visitante].index(pred["extra_question_2"]),
+        key="extra_2"
+    )
 
-
+    submit = st.form_submit_button(
+        "Actualizar Predicción" if edit_mode else "Guardar Predicción"
+    )
 
 # -------------------------
 # SUBMIT
@@ -167,15 +135,11 @@ if submit:
         extra_question_2=extra_2
     )
 
-    st.success("✅ Predicción guardada")
+    st.success("✅ Predicción actualizada" if edit_mode else "✅ Predicción guardada")
 
-    for k in [
-        "id_partido", "semana", "local", "visitante",
-        "fecha_partido", "preguntas_extra",
-        "preguntas_id_partido", "score_local",
-        "score_away", "extra_1", "extra_2"
-    ]:
-        st.session_state.pop(k, None)
+    for k in list(st.session_state.keys()):
+        if k not in ["logged_in", "user_id"]:
+            st.session_state.pop(k)
 
     st.switch_page("pages/menu_predicciones.py")
     st.stop()
