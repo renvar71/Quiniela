@@ -233,3 +233,22 @@ def get_resultado_admin(id_partido=None):
         query = query.eq("id_partido", id_partido)
     res = execute_with_retry(query)
     return res.data or []
+
+# -------------------------
+# AUTHENTICATE USER
+# -------------------------
+
+def authenticate_user(email, password):
+    res = supabase.table("usuarios") \
+        .select("id, password_hash") \
+        .eq("email", email) \
+        .execute()
+
+    if not res.data or len(res.data) == 0:
+        return None
+
+    user = res.data[0]
+
+    if user["password_hash"] == hash_password(password):
+        return user["id"]
+    return None
