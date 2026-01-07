@@ -1,13 +1,13 @@
 # app.py
 import streamlit as st
-
-from api import save_teams, save_next_games
 from db import (
-    authenticate_user,
-    create_user
+    supabase,
+    hash_password,
 )
 
 st.set_page_config(initial_sidebar_state="collapsed")
+
+from api import save_teams, save_next_games
 
 # -------------------------
 # SESSION INIT
@@ -18,22 +18,45 @@ if "logged_in" not in st.session_state:
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
 
-if "user" not in st.session_state:
-    st.session_state.user = None
+# -------------------------
+# AUTH HELPERS
+# -------------------------
+def authenticate_user(email, password):
+    res = supabase.table("usuarios") \
+        .select("id, password_hash") \
+        .eq("email", email) \
+        .execute()
+
+    if not res.data or len(res.data) == 0:
+        return None
+
+    user = res.data[0]
+
+    if user["password_hash"] == hash_password(password):
+        return user["id"]
+    return None
+
+def add_user(nombre, email, password):
+    try:
+        supabase.table("usuarios").insert([{
+            "nombre": nombre,
+            "email": email,
+            "password_hash": hash_password(password)
+        }]).execute()
+        return True
+    except Exception:
+        return False
 
 # -------------------------
 # LOGIN / REGISTER
 # -------------------------
 if not st.session_state.logged_in:
 
-    st.markdown(
-        """
+    st.markdown("""
         <style>
             [data-testid="stSidebar"] {display: none;}
         </style>
-        """,
-        unsafe_allow_html=True
-    )
+    """, unsafe_allow_html=True)
 
     st.title("🏈 Quiniela NFL")
 
@@ -60,9 +83,7 @@ if not st.session_state.logged_in:
         password = st.text_input("Contraseña", type="password")
 
         if st.button("Crear cuenta"):
-            ok = create_user(nombre, email, password)
-
-            if ok:
+            if add_user(nombre, email, password):
                 st.success("Usuario creado. Ya puedes iniciar sesión.")
             else:
                 st.error("Ese email ya existe o hubo un error")
@@ -70,8 +91,9 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -------------------------
-# DATA LOAD (ONCE PER SESSION)
+# Cargar datos iniciales solo una vez
 # -------------------------
+
 if "data_loaded" not in st.session_state:
 
     save_teams()
@@ -84,7 +106,6 @@ if "data_loaded" not in st.session_state:
         st.success(f"📅 {len(partidos)} partidos cargados")
 
     st.session_state.data_loaded = True
-
 # -------------------------
 # NAVIGATION (POST LOGIN)
 # -------------------------
@@ -112,15 +133,12 @@ pages = [
 pg = st.navigation(pages)
 
 # Ocultar link directo a predicción
-st.markdown(
-    """
-    <style>
-    a[href*="prediccion_partido"] {
-        display: none !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<style>
+a[href*="prediccion_partido"] {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 pg.run()
