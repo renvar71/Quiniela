@@ -150,7 +150,7 @@ for p in futuros:
         "Fecha": fecha_fmt,
         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
         "vs": "vs",
-        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
+        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else ""
         #"Estado": p.get("status", "scheduled"),
         "Predicción": estado_pred
     })
@@ -172,7 +172,7 @@ for p in completados:
     data_completados.append({
         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
         "Resultado": f"{p.get('score_local', 0)} - {p.get('score_away', 0)}",
-        "Visitante": f'<img src="{p.get('away_badge_url')}" width="40">' if p.get("away_badge_url") else "",
+        "Visitante": f'<img src="{p.get('away_badge_url')}" width="40">' if p.get("away_badge_url") else ""
         #"Estado": p.get("status", "finished")
     })
 
