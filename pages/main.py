@@ -129,7 +129,7 @@ max_semana = max(p.get("semana", 0) for p in partidos)
 partidos_semana_max = [p for p in partidos if p.get("semana") == max_semana]
 
 semana_nombre = WEEK_TITLES.get(max_semana, f"{max_semana}")
-st.markdown(f"###{semana_nombre}")
+st.markdown(f"{semana_nombre}")
 
 # ======================================================
 # PARTIDOS FUTUROS
@@ -158,7 +158,7 @@ for p in futuros:
 
 if data_futuros:
     df_futuros = pd.DataFrame(data_futuros)
-    st.subheader("Próximos partidos")
+    #st.subheader("Próximos partidos")
     st.markdown(df_futuros.to_html(escape=False, index=False), unsafe_allow_html=True)
 else:
     st.info("No hay partidos próximos para esta semana")
