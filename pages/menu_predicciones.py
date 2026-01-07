@@ -97,8 +97,6 @@ for p in partidos:
 # UI
 # -------------------------
 st.title("📋 Partidos")
-st.markdown("📝 **Haz click para editar un partido**")
-
 col_pend, col_comp = st.columns(2)
 
 # -------------------------
@@ -121,9 +119,9 @@ with col_pend:
 # -------------------------
 with col_comp:
     st.subheader("🟢 Completados")
-
+    st.markdown("*Selecciona el partido que quieras editar*")
     if not completados:
-        st.info("Aún no has completado predicciones")
+        st.info("¡Registra tu primera predicción!")
 
     for p in completados:
         label = f"{p['local']} vs {p['visitante']}"
