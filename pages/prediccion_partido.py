@@ -79,9 +79,15 @@ with st.form("form_prediccion"):
                 unsafe_allow_html=True
             )
 
-    # SCORE LOCAL
+      # SCORE LOCAL
     with col2:
-        score_local = st.number_input("", 0, 100, 0, key="score_local")
+        score_local = st.number_input(
+            "",
+            0,
+            100,
+            value=pred["score_local"] if edit_mode and pred else 0,
+            key="score_local"
+        )
 
     # SEPARADOR "vs"
     with col3:
