@@ -62,11 +62,7 @@ def calcular_posiciones(df):
 # VISTA GENERAL O POR SEMANA
 # -------------------------
 if vista == "General":
-    if not scores:
-        st.info("No hay puntajes disponibles todavía.")
-        st.stop()
-
-    # Crear tabla con columnas por semana y total
+    # Siempre mostrar a todos los usuarios, incluso si no tienen puntajes
     data = []
     for u in users:
         row = {"Usuario": u["nombre"]}
@@ -77,9 +73,8 @@ if vista == "General":
                 if s["usuario_id"] == u["id"] and s["semana"] == semana and s["puntos"] is not None
             )
             total += puntos_semana
-            # Nombre de columna usando WEEK_TITLES si existe
             col_name = WEEK_TITLES.get(semana, f"Semana {semana}")
-            row[col_name] = puntos_semana
+            row[col_name] = puntos_semana  # si no hay puntajes, suma = 0 automáticamente
         row["Total"] = total
         data.append(row)
 
