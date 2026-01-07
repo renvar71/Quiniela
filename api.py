@@ -3,7 +3,7 @@ import requests
 import streamlit as st
 
 from db import (
-    save_team,
+    upsert_equipos,
     upsert_partidos,
     get_team_id_by_name
 )
