@@ -1,7 +1,8 @@
 #menu_predicciones.py
 import streamlit as st
-from supabase_config import supabase
-from db import get_prediccion_status, get_prediccion_by_user, WEEK_TITLES
+# Cambio 1
+# from supabase_config import supabase
+from db import get_prediccion_status, get_prediccion_by_user, WEEK_TITLES, get_supabase
 
 # -------------------------
 # SESSION CHECK
@@ -42,26 +43,52 @@ def _set_context_and_go(p):
 # -------------------------
 # OBTENER PARTIDOS
 # -------------------------
-res = (
-    supabase
-    .table("partidos")
-    .select(
-        """
-        id_partido,
-        semana,
-        fecha,
-        local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
-        visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, badge_url),
-        home_badge_url,
-        away_badge_url
-        """
+# Cambio 2
+# Cacheamos para que no se carguen cada vez que se hace una visita a la pagina
+# res = (
+#     supabase
+#     .table("partidos")
+#     .select(
+#         """
+#         id_partido,
+#         semana,
+#         fecha,
+#         local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
+#         visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, badge_url),
+#         home_badge_url,
+#         away_badge_url
+#         """
+#     )
+#     .order("fecha")
+#     .execute()
+# )
+
+# partidos = res.data or []
+if "partidos_cache" not in st.session_state:
+    supabase = get_supabase()
+
+    res = (
+        supabase
+        .table("partidos")
+        .select(
+            """
+            id_partido,
+            semana,
+            fecha,
+            local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
+            visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, badge_url),
+            home_badge_url,
+            away_badge_url
+            """
+        )
+        .order("fecha")
+        .execute()
     )
-    .order("fecha")
-    .execute()
-)
 
-partidos = res.data or []
+    st.session_state.partidos_cache = res.data or []
 
+# usar SIEMPRE desde sesión
+partidos = st.session_state.partidos_cache
 # -------------------------
 # FILTRAR POR SEMANA MÁS ALTA
 # -------------------------
