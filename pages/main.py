@@ -97,8 +97,10 @@ def cargar_partidos():
                 }, on_conflict="id_partido").execute()
         except Exception as e:
             st.error(f"Error cargando partidos {tipo}: {e}")
-
-cargar_partidos()
+# PATCH CONTRA RERUNS
+if "partidos_sync" not in st.session_state:
+    cargar_partidos()
+    st.session_state.partidos_sync = True
 
 # ======================================================
 # OBTENER PARTIDOS
