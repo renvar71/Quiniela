@@ -39,7 +39,11 @@ semanas_disponibles = sorted({s["semana"] for s in scores if s["puntos"] is not 
 # -------------------------
 # SELECTBOX VISTA
 # -------------------------
-vista = st.selectbox("Selecciona semana", ["General"] + [str(w) for w in semanas_disponibles])
+# Crear dos columnas: la primera vacía, la segunda para el selectbox
+col1, col2 = st.columns([4, 1]) 
+with col2:
+    vista = st.selectbox("Selecciona semana", ["General"] + [str(w) for w in semanas_disponibles])
+
 
 # -------------------------
 # FUNCIÓN PARA CALCULAR POSICIONES CON EMOJIS
