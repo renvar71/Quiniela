@@ -53,7 +53,7 @@ def save_teams():
         })
 
     if equipos:
-        upsert_equipos(equipos)
+        save_team(equipos)
 
 
 def save_next_games():
