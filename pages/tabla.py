@@ -1,77 +1,69 @@
-#tabla.py
+# tabla.py
 import streamlit as st
 import pandas as pd
-from supabase_config import supabase
+from db import get_usuarios, get_puntajes
 
 # -------------------------
 # SESSION CHECK
 # -------------------------
-if "logged_in" not in st.session_state or not st.session_state.logged_in:
+if not st.session_state.get("logged_in"):
     st.warning("Debes iniciar sesión")
     st.stop()
 
 st.title("📊 Tabla General")
 
 # -------------------------
-# OBTENER USUARIOS
+# CACHE DE LECTURA
 # -------------------------
-users_res = supabase.table("usuarios") \
-    .select("id, nombre") \
-    .execute()
+@st.cache_data(ttl=30)
+def load_tabla():
+    usuarios = get_usuarios()
+    puntajes = get_puntajes()
 
-users = users_res.data or []
+    data = []
 
-# -------------------------
-# OBTENER PUNTAJES
-# -------------------------
-scores_res = supabase.table("puntajes") \
-    .select("usuario_id, puntos") \
-    .execute()
+    for u in usuarios:
+        total_puntos = sum(
+            p["puntos"]
+            for p in puntajes
+            if p["usuario_id"] == u["id"] and p["puntos"] is not None
+        )
 
-scores = scores_res.data or []
+        data.append({
+            "Usuario": u["nombre"],
+            "Puntos": total_puntos
+        })
 
-# -------------------------
-# CALCULAR RANKING
-# -------------------------
-data = []
+    df = pd.DataFrame(data)
 
-for u in users:
-    total_puntos = sum(
-        s["puntos"] for s in scores
-        if s["usuario_id"] == u["id"] and s["puntos"] is not None
-    )
+    if not df.empty:
+        df = df.sort_values("Puntos", ascending=False).reset_index(drop=True)
 
-    data.append({
-        "Usuario": u["nombre"],
-        "Puntos": total_puntos
-    })
+        posiciones = []
+        for i in range(len(df)):
+            if i == 0:
+                posiciones.append("🥇 1")
+            elif i == 1:
+                posiciones.append("🥈 2")
+            elif i == 2:
+                posiciones.append("🥉 3")
+            else:
+                posiciones.append(str(i + 1))
 
-df = pd.DataFrame(data)
+        df.insert(0, "Posición", posiciones)
 
-# Ordenar por puntos
-df = df.sort_values(by="Puntos", ascending=False).reset_index(drop=True)
-
-# -------------------------
-# POSICIONES CON EMOJIS
-# -------------------------
-posiciones = []
-for i in range(len(df)):
-    if i == 0:
-        posiciones.append("🥇 1")
-    elif i == 1:
-        posiciones.append("🥈 2")
-    elif i == 2:
-        posiciones.append("🥉 3")
-    else:
-        posiciones.append(str(i + 1))
-
-df.insert(0, "Posición", posiciones)
+    return df
 
 # -------------------------
 # MOSTRAR TABLA
 # -------------------------
-st.dataframe(
-    df,
-    hide_index=True,
-    use_container_width=True
-)
+df = load_tabla()
+
+if df.empty:
+    st.info("Aún no hay puntajes registrados")
+else:
+    st.dataframe(
+        df,
+        hide_index=True,
+        use_container_width=True
+    )
