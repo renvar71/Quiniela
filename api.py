@@ -2,7 +2,7 @@
 import requests
 import streamlit as st
 #from db import supabase
-from db import get_supabase()
+from db import get_supabase
 API_KEY = "609380"
 LEAGUE_ID = 4391
 
