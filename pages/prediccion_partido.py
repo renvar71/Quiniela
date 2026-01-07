@@ -60,10 +60,10 @@ st.subheader(WEEK_TITLES.get(semana, f"Semana {semana}"))
 st.write(f"**{local} vs {visitante}**")
 
 if st.button("🔙 Volver"):
-    # Limpiamos solo variables relacionadas con la predicción actual, si quieres
-    for k in list(st.session_state.keys()):
-        if k not in ["logged_in", "user_id"]:
-            st.session_state.pop(k)
+    # # Limpiamos solo variables relacionadas con la predicción actual, si quieres
+    # for k in list(st.session_state.keys()):
+    #     if k not in ["logged_in", "user_id"]:
+    #         st.session_state.pop(k)
     st.switch_page("pages/menu_predicciones.py")
 
 # -------------------------
