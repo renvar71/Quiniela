@@ -40,9 +40,9 @@ semanas_disponibles = sorted({s["semana"] for s in scores if s["puntos"] is not 
 # SELECTBOX VISTA
 # -------------------------
 # Crear dos columnas: la primera vacía, la segunda para el selectbox
-col1, col2 = st.columns([4, 1]) 
+col1, col2 = st.columns([3, 1]) 
 with col2:
-    vista = st.selectbox("Selecciona semana", ["General"] + [str(w) for w in semanas_disponibles])
+    vista = st.selectbox("", ["General"] + [str(w) for w in semanas_disponibles])
 
 
 # -------------------------
@@ -66,19 +66,21 @@ def calcular_posiciones(df):
 # VISTA GENERAL O POR SEMANA
 # -------------------------
 if vista == "General":
-    # Siempre mostrar a todos los usuarios, incluso si no tienen puntajes
+    # Tomar todas las semanas posibles según WEEK_TITLES
+    todas_semanas = sorted(WEEK_TITLES.keys())
+
     data = []
     for u in users:
         row = {"Usuario": u["nombre"]}
         total = 0
-        for semana in semanas_disponibles:
+        for semana in todas_semanas:
             puntos_semana = sum(
                 s["puntos"] for s in scores
                 if s["usuario_id"] == u["id"] and s["semana"] == semana and s["puntos"] is not None
             )
             total += puntos_semana
             col_name = WEEK_TITLES.get(semana, f"Semana {semana}")
-            row[col_name] = puntos_semana  # si no hay puntajes, suma = 0 automáticamente
+            row[col_name] = puntos_semana  # Si no hay puntajes, suma = 0 automáticamente
         row["Total"] = total
         data.append(row)
 
