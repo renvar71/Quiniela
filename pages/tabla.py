@@ -1,4 +1,3 @@
-#tabla.py
 import streamlit as st
 import pandas as pd
 from supabase_config import supabase
