@@ -95,7 +95,13 @@ with st.form("form_prediccion"):
 
     # SCORE VISITANTE
     with col4:
-        score_away = st.number_input("", 0, 100, 0, key="score_away")
+        score_away = st.number_input(
+            "",
+            0,
+            100,
+            value=pred["score_away"] if edit_mode and pred else 0,
+            key="score_away"
+        )
 
     # LOGO VISITANTE
     with col5:
@@ -118,7 +124,13 @@ with st.form("form_prediccion"):
         st.write("No se encontró información del partido")
         linea = "N/A"  # para evitar error si no hay valor
     
-    line = st.radio(f"Over / Under total puntos ({linea})", ["Over", "Under"], horizontal=True, key="linea")
+    line = st.radio(
+        f"Over / Under total puntos ({linea})",
+        ["Over", "Under"],
+        index=["Over", "Under"].index(pred["line_over_under"]) if edit_mode and pred else 0,
+        horizontal=True,
+        key="linea"
+    )
 
 
     # PREGUNTAS EXTRA
