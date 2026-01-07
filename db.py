@@ -119,24 +119,7 @@ def save_prediccion(
         },
         on_conflict="usuario_id,id_partido"
     ).execute()
-
-    supabase.table("predicciones").upsert(
-        {
-            "usuario_id": usuario_id,
-            "id_partido": id_partido,
-            "semana": semana,
-            "pick": pick,
-            "score_local": score_local,
-            "score_away": score_away,
-            "line_over_under": line_over_under,
-            "extra_question_1": extra_question_1,
-            "extra_question_2": extra_question_2,
-            "fecha_partido": fecha_partido
-        },
-        on_conflict="usuario_id,id_partido"
-    ).execute()
-
-
+# QUITAR DOBLE UPSERT
 def has_prediccion(usuario_id, id_partido):
     res = supabase.table("predicciones") \
         .select("id") \
