@@ -125,6 +125,8 @@ st.markdown(
 # -------------------------
 # PARTIDOS FUTUROS (status scheduled)
 # -------------------------
+
+"""
 futuros = [p for p in partidos if p.get("status") == "scheduled"]
 
 data_futuros = []
@@ -176,3 +178,4 @@ if data_completados:
     st.markdown(df_completados.to_html(escape=False, index=False), unsafe_allow_html=True)
 else:
     st.info("No hay resultados previos")
+"""
