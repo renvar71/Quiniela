@@ -117,10 +117,11 @@ col_pend, col_comp = st.columns(2)
 # PENDIENTES
 # -------------------------
 with col_pend:
-    st.subheader("🟡 Pendientes")
+    st.subheader("Pendientes 🟡")
+    st.markdown("*Selecciona el partido que quieras registrar*")
 
     if not pendientes:
-        st.info("No hay predicciones pendientes para la semana más alta")
+        st.info("No hay predicciones pendientes")
 
     for p in pendientes:
         label = f"{p['local']} vs {p['visitante']}"
@@ -132,11 +133,11 @@ with col_pend:
 # COMPLETADOS
 # -------------------------
 with col_comp:
-    st.subheader("🟢 Completados")
+    st.subheader("Completados 🟢")
     st.markdown("*Selecciona el partido que quieras editar*")
 
     if not completados:
-        st.info("Los partidos de la semana más alta aún no se han completado")
+        st.info("¡Llena tu primera predicción")
 
     for p in completados:
         label = f"{p['local']} vs {p['visitante']}"
