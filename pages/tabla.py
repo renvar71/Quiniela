@@ -1,6 +1,8 @@
+# tabla.py
 import streamlit as st
 import pandas as pd
 from supabase_config import supabase
+from db import WEEK_TITLES
 
 # -------------------------
 # SESSION CHECK
@@ -24,47 +26,90 @@ users = users_res.data or []
 # OBTENER PUNTAJES
 # -------------------------
 scores_res = supabase.table("puntajes") \
-    .select("usuario_id, puntos") \
+    .select("usuario_id, puntos, semana") \
     .execute()
 
 scores = scores_res.data or []
 
 # -------------------------
-# CALCULAR RANKING
+# SEMANAS DISPONIBLES
 # -------------------------
-data = []
-
-for u in users:
-    total_puntos = sum(
-        s["puntos"] for s in scores
-        if s["usuario_id"] == u["id"] and s["puntos"] is not None
-    )
-
-    data.append({
-        "Usuario": u["nombre"],
-        "Puntos": total_puntos
-    })
-
-df = pd.DataFrame(data)
-
-# Ordenar por puntos
-df = df.sort_values(by="Puntos", ascending=False).reset_index(drop=True)
+semanas_disponibles = sorted({s["semana"] for s in scores if s["puntos"] is not None})
 
 # -------------------------
-# POSICIONES CON EMOJIS
+# SELECTBOX VISTA
 # -------------------------
-posiciones = []
-for i in range(len(df)):
-    if i == 0:
-        posiciones.append("🥇 1")
-    elif i == 1:
-        posiciones.append("🥈 2")
-    elif i == 2:
-        posiciones.append("🥉 3")
-    else:
-        posiciones.append(str(i + 1))
+vista = st.selectbox("Selecciona semana", ["General"] + [str(w) for w in semanas_disponibles])
 
-df.insert(0, "Posición", posiciones)
+# -------------------------
+# FUNCIÓN PARA CALCULAR POSICIONES CON EMOJIS
+# -------------------------
+def calcular_posiciones(df):
+    posiciones = []
+    for i in range(len(df)):
+        if i == 0:
+            posiciones.append("🥇 1")
+        elif i == 1:
+            posiciones.append("🥈 2")
+        elif i == 2:
+            posiciones.append("🥉 3")
+        else:
+            posiciones.append(str(i + 1))
+    df.insert(0, "Posición", posiciones)
+    return df
+
+# -------------------------
+# VISTA GENERAL O POR SEMANA
+# -------------------------
+if vista == "General":
+    if not scores:
+        st.info("No hay puntajes disponibles todavía.")
+        st.stop()
+
+    # Crear tabla con columnas por semana y total
+    data = []
+    for u in users:
+        row = {"Usuario": u["nombre"]}
+        total = 0
+        for semana in semanas_disponibles:
+            puntos_semana = sum(
+                s["puntos"] for s in scores
+                if s["usuario_id"] == u["id"] and s["semana"] == semana and s["puntos"] is not None
+            )
+            total += puntos_semana
+            # Nombre de columna usando WEEK_TITLES si existe
+            col_name = WEEK_TITLES.get(semana, f"Semana {semana}")
+            row[col_name] = puntos_semana
+        row["Total"] = total
+        data.append(row)
+
+    df = pd.DataFrame(data)
+    # Ordenar por Total
+    df = df.sort_values(by="Total", ascending=False).reset_index(drop=True)
+    df = calcular_posiciones(df)
+
+else:
+    # Vista de semana específica
+    semana_sel = int(vista)
+    data = []
+    for u in users:
+        puntos_semana = sum(
+            s["puntos"] for s in scores
+            if s["usuario_id"] == u["id"] and s["semana"] == semana_sel and s["puntos"] is not None
+        )
+        data.append({
+            "Usuario": u["nombre"],
+            "Puntos": puntos_semana
+        })
+
+    if not any(d["Puntos"] > 0 for d in data):
+        st.info(f"No hay puntaje de la semana {semana_sel} todavía.")
+        st.stop()
+
+    df = pd.DataFrame(data)
+    # Ordenar por puntos
+    df = df.sort_values(by="Puntos", ascending=False).reset_index(drop=True)
+    df = calcular_posiciones(df)
 
 # -------------------------
 # MOSTRAR TABLA
