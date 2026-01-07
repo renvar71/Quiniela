@@ -1,8 +1,7 @@
-# menu_predicciones.py
+#menu_predicciones
 import streamlit as st
-from datetime import datetime
 from supabase_config import supabase
-from db import get_prediccion_status
+from db import get_prediccion_status, get_prediccion_by_user
 
 # -------------------------
 # SESSION CHECK
@@ -38,16 +37,13 @@ res = (
 
 partidos = res.data or []
 
-# -------------------------
-# FILTRAR PENDIENTES
-# -------------------------
 pendientes = []
+completados = []
 
 for p in partidos:
     id_partido = p.get("id_partido")
     semana = p.get("semana")
     fecha = p.get("fecha")
-
     local = p.get("local", {}).get("nombre")
     visitante = p.get("visitante", {}).get("nombre")
 
@@ -55,44 +51,83 @@ for p in partidos:
         continue
 
     estado = get_prediccion_status(user_id, id_partido, fecha)
+    prediccion = get_prediccion_by_user(user_id, id_partido)
+
+    item = {
+        "id_partido": id_partido,
+        "semana": semana,
+        "fecha": fecha,
+        "local": local,
+        "visitante": visitante,
+        "home_badge_url": p.get("home_badge_url"),
+        "away_badge_url": p.get("away_badge_url"),
+        "prediccion": prediccion
+    }
 
     if estado == "🟡 Pendiente":
-        pendientes.append((id_partido, semana, fecha, local, visitante, p.get("home_badge_url"), p.get("away_badge_url")))
+        pendientes.append(item)
+    else:
+        completados.append(item)
 
 # -------------------------
 # UI
 # -------------------------
-st.title("📋 Partidos pendientes")
-st.markdown("*Selecciona un partido para registrar tu predicción*")
+st.title("📋 Partidos")
+st.markdown("📝 **Haz click para editar un partido**")
 
-if not pendientes:
-    st.success("🎉 No tienes partidos pendientes")
-else:
-    for id_partido, semana, fecha, local, visitante, home_badge_url, away_badge_url in pendientes:
-        col1, col2, col3 = st.columns([1, 2, 1])
+col_pend, col_comp = st.columns(2)
 
-        with col2:
-            if st.button(
-                f"{local} vs {visitante}",
-                key=f"p_{id_partido}",
-                use_container_width=True
-            ):
-                # limpiar contexto previo
-                for k in [
-                    "id_partido", "semana", "local",
-                    "visitante", "fecha_partido",
-                    "home_badge_url", "away_badge_url"
-                ]:
-                    st.session_state.pop(k, None)
+# -------------------------
+# PENDIENTES
+# -------------------------
+with col_pend:
+    st.subheader("🟡 Pendientes")
 
-                # setear nuevo contexto con badges incluidos
-                st.session_state.id_partido = id_partido
-                st.session_state.semana = semana
-                st.session_state.local = local
-                st.session_state.visitante = visitante
-                st.session_state.fecha_partido = fecha
-                st.session_state.home_badge_url = home_badge_url
-                st.session_state.away_badge_url = away_badge_url
+    if not pendientes:
+        st.info("No tienes partidos pendientes")
 
-                st.switch_page("pages/prediccion_partido.py")
-                st.stop()
+    for p in pendientes:
+        label = f"{p['local']} vs {p['visitante']}"
+
+        if st.button(label, key=f"pend_{p['id_partido']}", use_container_width=True):
+            _set_context_and_go(p)
+
+# -------------------------
+# COMPLETADOS
+# -------------------------
+with col_comp:
+    st.subheader("🟢 Completados")
+
+    if not completados:
+        st.info("Aún no has completado predicciones")
+
+    for p in completados:
+        label = f"{p['local']} vs {p['visitante']}"
+
+        if st.button(label, key=f"comp_{p['id_partido']}", use_container_width=True):
+            _set_context_and_go(p)
+
+# -------------------------
+# CONTEXT + NAV
+# -------------------------
+def _set_context_and_go(p):
+    for k in [
+        "id_partido", "semana", "local", "visitante",
+        "fecha_partido", "home_badge_url", "away_badge_url",
+        "edit_mode", "prediccion_actual"
+    ]:
+        st.session_state.pop(k, None)
+
+    st.session_state.id_partido = p["id_partido"]
+    st.session_state.semana = p["semana"]
+    st.session_state.local = p["local"]
+    st.session_state.visitante = p["visitante"]
+    st.session_state.fecha_partido = p["fecha"]
+    st.session_state.home_badge_url = p["home_badge_url"]
+    st.session_state.away_badge_url = p["away_badge_url"]
+
+    st.session_state.edit_mode = bool(p["prediccion"])
+    st.session_state.prediccion_actual = p["prediccion"]
+
+    st.switch_page("pages/prediccion_partido.py")
+    st.stop()
