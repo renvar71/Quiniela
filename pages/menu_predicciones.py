@@ -1,4 +1,4 @@
-#menu_predicciones
+#menu_predicciones.py
 import streamlit as st
 from supabase_config import supabase
 from db import get_prediccion_status, get_prediccion_by_user
@@ -38,6 +38,7 @@ def _set_context_and_go(p):
 
     st.switch_page("pages/prediccion_partido.py")
     st.stop()
+
 # -------------------------
 # OBTENER PARTIDOS
 # -------------------------
@@ -61,6 +62,18 @@ res = (
 
 partidos = res.data or []
 
+# -------------------------
+# FILTRAR POR SEMANA MÁS ALTA
+# -------------------------
+if partidos:
+    max_semana = max(p.get("semana", 0) for p in partidos)
+    partidos = [p for p in partidos if p.get("semana") == max_semana]
+else:
+    max_semana = None
+
+# -------------------------
+# SEPARAR PENDIENTES Y COMPLETADOS
+# -------------------------
 pendientes = []
 completados = []
 
@@ -96,7 +109,8 @@ for p in partidos:
 # -------------------------
 # UI
 # -------------------------
-st.title("📋 Partidos")
+st.title(f"📋 Partidos - Semana {max_semana}" if max_semana else "📋 Partidos")
+
 col_pend, col_comp = st.columns(2)
 
 # -------------------------
@@ -106,7 +120,7 @@ with col_pend:
     st.subheader("🟡 Pendientes")
 
     if not pendientes:
-        st.info("No tienes partidos pendientes")
+        st.info("No hay predicciones pendientes para la semana más alta")
 
     for p in pendientes:
         label = f"{p['local']} vs {p['visitante']}"
@@ -120,8 +134,9 @@ with col_pend:
 with col_comp:
     st.subheader("🟢 Completados")
     st.markdown("*Selecciona el partido que quieras editar*")
+
     if not completados:
-        st.info("¡Registra tu primera predicción!")
+        st.info("Los partidos de la semana más alta aún no se han completado")
 
     for p in completados:
         label = f"{p['local']} vs {p['visitante']}"
