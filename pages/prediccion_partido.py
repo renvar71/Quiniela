@@ -151,7 +151,7 @@ if submit:
     st.success("✅ Predicción actualizada" if edit_mode else "✅ Predicción guardada")
 
     for k in list(st.session_state.keys()):
-        if k not in ["logged_in", "user_id"]:
+        if k not in ["logged_in", "user_id","user"]:
             st.session_state.pop(k)
 
     st.switch_page("pages/menu_predicciones.py")
