@@ -259,4 +259,16 @@ def get_prediccion_by_user(usuario_id, id_partido):
         return res.data[0]
 
     return None
+## Definir otra funcion similar
+def get_prediccion_by_user_optimized(usuario_id):
+    supabase = get_supabase()
 
+    res = (
+        supabase
+        .table("predicciones")
+        .select("*")
+        .eq("usuario_id", usuario_id)
+        .execute()
+    )
+
+    return res.data or []
