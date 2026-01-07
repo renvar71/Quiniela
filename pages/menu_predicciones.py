@@ -1,7 +1,7 @@
 #menu_predicciones.py
 import streamlit as st
 from supabase_config import supabase
-from db import get_prediccion_status, get_prediccion_by_user
+from db import get_prediccion_status, get_prediccion_by_user, WEEK_TITLES
 
 # -------------------------
 # SESSION CHECK
@@ -109,7 +109,11 @@ for p in partidos:
 # -------------------------
 # UI
 # -------------------------
-st.title(f"📋 Partidos - Semana {max_semana}" if max_semana else "📋 Partidos")
+if max_semana:
+    semana_nombre = WEEK_TITLES.get(max_semana, f"Semana {max_semana}")
+    st.title(f"📋 Partidos - {semana_nombre}")
+else:
+    st.title("📋 Partidos")
 
 col_pend, col_comp = st.columns(2)
 
