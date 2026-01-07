@@ -151,7 +151,7 @@ for p in futuros:
         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
         "vs": "vs",
         "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
-        "Estado": p.get("status", "scheduled"),
+        #"Estado": p.get("status", "scheduled"),
         "Predicción": estado_pred
     })
 
@@ -173,7 +173,7 @@ for p in completados:
         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
         "Resultado": f"{p.get('score_local', 0)} - {p.get('score_away', 0)}",
         "Visitante": f'<img src="{p.get('away_badge_url')}" width="40">' if p.get("away_badge_url") else "",
-        "Estado": p.get("status", "finished")
+        #"Estado": p.get("status", "finished")
     })
 
 if data_completados:
@@ -181,4 +181,4 @@ if data_completados:
     st.subheader("Partidos completados")
     st.markdown(df_completados.to_html(escape=False, index=False), unsafe_allow_html=True)
 else:
-    st.info("No hay resultados previos para esta semana")
+    #st.info("No hay resultados previos para esta semana")
