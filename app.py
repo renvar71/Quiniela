@@ -1,9 +1,10 @@
 # app.py
 import streamlit as st
-from db import (
-    supabase,
-    hash_password,
-)
+from db import hash_password
+# from db import supabase
+# Importamos solamente la herramienta de creación del cliente para bajarlo a nivel de sesión en vez de global
+from supabase_config import create_client
+import os
 
 st.set_page_config(initial_sidebar_state="collapsed")
 
@@ -17,15 +18,29 @@ if "logged_in" not in st.session_state:
 
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
-
+# -------------------------
+# SUPABASE CLIENT (SESSION SCOPED)
+# -------------------------
+# Antes de autentificar se verifica si se encuentra a nivel sesión y se crea
+if "supabase" not in st.session_state:
+    st.session_state.supabase = create_client(
+        os.environ["SUPABASE_URL"],
+        os.environ["SUPABASE_KEY"]
+    )
 # -------------------------
 # AUTH HELPERS
 # -------------------------
 def authenticate_user(email, password):
-    res = supabase.table("usuarios") \
+    # res = supabase.table("usuarios") \
+    #     .select("id, password_hash") \
+    #     .eq("email", email) \
+    #     .execute()
+    # USAR EL CLIENTE DESDE SESIÓN EN AUTH
+    res = st.session_state.supabase.table("usuarios") \
         .select("id, password_hash") \
         .eq("email", email) \
         .execute()
+
 
     if not res.data or len(res.data) == 0:
         return None
@@ -38,7 +53,8 @@ def authenticate_user(email, password):
 
 def add_user(nombre, email, password):
     try:
-        supabase.table("usuarios").insert([{
+        # MISMO CAMBIO AQUÍ
+        st.session_state.supabase.table("usuarios").insert([{
             "nombre": nombre,
             "email": email,
             "password_hash": hash_password(password)
@@ -46,6 +62,14 @@ def add_user(nombre, email, password):
         return True
     except Exception:
         return False
+    #     supabase.table("usuarios").insert([{
+    #         "nombre": nombre,
+    #         "email": email,
+    #         "password_hash": hash_password(password)
+    #     }]).execute()
+    #     return True
+    # except Exception:
+    #     return False
 
 # -------------------------
 # LOGIN / REGISTER
