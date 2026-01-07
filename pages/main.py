@@ -126,7 +126,7 @@ st.markdown(
 # PARTIDOS FUTUROS (status scheduled)
 # -------------------------
 
-"""
+
 futuros = [p for p in partidos if p.get("status") == "scheduled"]
 
 data_futuros = []
@@ -159,23 +159,24 @@ else:
 # -------------------------
 # PARTIDOS PASADOS (status finished)
 # -------------------------
-completados = [p for p in partidos if p.get("status") == "finished"]
 
-data_completados = []
-for p in completados:
+# completados = [p for p in partidos if p.get("status") == "finished"]
+
+# data_completados = []
+# for p in completados:
     
-    data_completados.append({
-        "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
-        "Resultado": f"{p.get('score_local', 0)} - {p.get('score_away', 0)}",
-        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
-        "Estado": p.get("status", "finished")
-    })
+#     data_completados.append({
+#         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
+#         "Resultado": f"{p.get('score_local', 0)} - {p.get('score_away', 0)}",
+#         "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
+#         "Estado": p.get("status", "finished")
+#     })
 
 
-if data_completados:
-    df_completados = pd.DataFrame(data_completados)
-    st.subheader("Partidos completados")
-    st.markdown(df_completados.to_html(escape=False, index=False), unsafe_allow_html=True)
-else:
-    st.info("No hay resultados previos")
-"""
+# if data_completados:
+#     df_completados = pd.DataFrame(data_completados)
+#     st.subheader("Partidos completados")
+#     st.markdown(df_completados.to_html(escape=False, index=False), unsafe_allow_html=True)
+# else:
+#     st.info("No hay resultados previos")
+
