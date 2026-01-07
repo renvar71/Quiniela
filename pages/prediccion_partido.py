@@ -137,7 +137,7 @@ with st.form("form_prediccion"):
     st.markdown("**Preguntas extra:**")
 
     # PREGUNTAS EXTRA
-     extra_1 = st.radio(
+    extra_1 = st.radio(
         pregunta_1,
         [local, visitante],
         index=[local, visitante].index(pred["extra_question_1"]) if edit_mode and pred else 0,
