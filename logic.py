@@ -68,6 +68,22 @@ def calcular_puntaje_prediccion(prediccion, resultado):
 
     return puntos
 
+def puntos_preguntas_extra(pred, extra_1_ok, extra_2_ok):
+    puntos = 0
+
+    if extra_1_ok and pred.get("extra_question_1") == extra_1_ok:
+        puntos += 5
+
+    if extra_2_ok and pred.get("extra_question_2") == extra_2_ok:
+        puntos += 5
+
+    return puntos
+
+def puntos_over_under(pred, o_u):
+    puntos = 0
+    if o_u and pred.get("line_over_under") == o_u:
+        puntos += 8
+    return puntos
 
 # -------------------------
 # CALCULAR PUNTAJES DEL PARTIDO
@@ -76,7 +92,14 @@ def calcular_puntajes_partido(id_partido, semana):
     resultado = fetch_match_result(id_partido)
     if not resultado:
         return []
+    admin = get_resultado_admin_partido(id_partido)
+    if not admin:
+        return []
 
+    o_u = admin.get("o_u_resultado")
+    extra_1_correcta = admin.get("pregunta1_resultado")
+    extra_2_correcta = admin.get("pregunta2_resultado")
+    
     res = (
         supabase
         .table("predicciones")
@@ -94,11 +117,18 @@ def calcular_puntajes_partido(id_partido, semana):
         pred = {
             "pick": p["pick"],
             "score_local": p["score_local"],
-            "score_away": p["score_away"]
+            "score_away": p["score_away"],
+            "line_over_under":p["line_over_under"],
+            "extra_question_1":p["extra_question_1"],
+            "extra_question_2":p["extra_question_2"]
         }
 
-        puntos = calcular_puntaje_prediccion(pred, resultado)
-
+        puntos = (
+            calcular_puntaje_prediccion(pred, resultado) 
+            + puntos_over_under(pred, o_u) 
+            + puntos_preguntas_extra(pred, extra_1_correcta, extra_2_correcta)
+        )
+##nDUDA
         # 🔥 Guardar directamente en Supabase
         supabase.table("puntajes").upsert(
             {
@@ -143,7 +173,7 @@ def get_resultado_admin_partido(id_partido):
     res = (
         supabase
         .table("resultados_admin")
-        .select("linea, extra_1_resultado, extra_2_resultado")
+        .select("o_u_resultado, pregunta1_resultado, pregunta2_resultado")
         .eq("id_partido", id_partido)
         .limit(1)
         .execute()
