@@ -1,8 +1,8 @@
+#main.py
 import streamlit as st
 from datetime import datetime, date
 import pandas as pd
 import requests
-
 from supabase_config import supabase
 from db import get_prediccion_status, WEEK_TITLES
 
@@ -122,12 +122,18 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# -------------------------
-# PARTIDOS FUTUROS (status scheduled)
-# -------------------------
+# ======================================================
+# FILTRAR POR SEMANA MÁS GRANDE
+# ======================================================
+max_semana = max(p.get("semana", 0) for p in partidos)
+partidos_semana_max = [p for p in partidos if p.get("semana") == max_semana]
 
+st.markdown(f"### Mostrando partidos de la semana {max_semana}")
 
-futuros = [p for p in partidos if p.get("status") == "scheduled"]
+# ======================================================
+# PARTIDOS FUTUROS
+# ======================================================
+futuros = [p for p in partidos_semana_max if p.get("status") == "scheduled"]
 
 data_futuros = []
 for p in futuros:
@@ -154,29 +160,25 @@ if data_futuros:
     st.subheader("Próximos partidos")
     st.markdown(df_futuros.to_html(escape=False, index=False), unsafe_allow_html=True)
 else:
-    st.info("No hay partidos próximos")
+    st.info("No hay partidos próximos para esta semana")
 
-# -------------------------
-# PARTIDOS PASADOS (status finished)
-# -------------------------
+# ======================================================
+# PARTIDOS PASADOS
+# ======================================================
+completados = [p for p in partidos_semana_max if p.get("status") == "finished"]
 
-# completados = [p for p in partidos if p.get("status") == "finished"]
+data_completados = []
+for p in completados:
+    data_completados.append({
+        "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
+        "Resultado": f"{p.get('score_local', 0)} - {p.get('score_away', 0)}",
+        "Visitante": f'<img src="{p.get('away_badge_url')}" width="40">' if p.get("away_badge_url") else "",
+        "Estado": p.get("status", "finished")
+    })
 
-# data_completados = []
-# for p in completados:
-    
-#     data_completados.append({
-#         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
-#         "Resultado": f"{p.get('score_local', 0)} - {p.get('score_away', 0)}",
-#         "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
-#         "Estado": p.get("status", "finished")
-#     })
-
-
-# if data_completados:
-#     df_completados = pd.DataFrame(data_completados)
-#     st.subheader("Partidos completados")
-#     st.markdown(df_completados.to_html(escape=False, index=False), unsafe_allow_html=True)
-# else:
-#     st.info("No hay resultados previos")
-
+if data_completados:
+    df_completados = pd.DataFrame(data_completados)
+    st.subheader("Partidos completados")
+    st.markdown(df_completados.to_html(escape=False, index=False), unsafe_allow_html=True)
+else:
+    st.info("No hay resultados previos para esta semana")
