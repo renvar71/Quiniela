@@ -1,4 +1,3 @@
-# db.py
 from datetime import datetime, timedelta, date
 import hashlib
 import time
@@ -7,7 +6,7 @@ from supabase import create_client
 from supabase_config import SUPABASE_URL, SUPABASE_KEY
 
 # -------------------------
-# SUPABASE CLIENT (SAFE)
+# SUPABASE CLIENT
 # -------------------------
 def get_supabase():
     return create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -51,7 +50,10 @@ def hash_password(password: str) -> str:
 def get_user_id(email):
     sb = get_supabase()
     res = execute_with_retry(
-        sb.table("usuarios").select("id").eq("email", email)
+        sb.table("usuarios")
+        .select("id")
+        .eq("email", email)
+        .limit(1)
     )
     return res.data[0]["id"] if res.data else None
 
@@ -155,6 +157,7 @@ def has_prediccion(usuario_id, id_partido):
         .select("id")
         .eq("usuario_id", usuario_id)
         .eq("id_partido", id_partido)
+        .limit(1)
     )
     return bool(res.data)
 
@@ -186,22 +189,20 @@ def get_prediccion_status(usuario_id, id_partido, fecha_partido):
             pass
         return "🟢 Registrada"
 
-    if isinstance(fecha_partido, (datetime, date)):
-        partido_dt = (
-            fecha_partido
-            if isinstance(fecha_partido, datetime)
-            else datetime.combine(fecha_partido, datetime.min.time())
-        )
+    try:
+        if isinstance(fecha_partido, str):
+            partido_dt = datetime.fromisoformat(fecha_partido.replace("Z", ""))
+        elif isinstance(fecha_partido, datetime):
+            partido_dt = fecha_partido
+        elif isinstance(fecha_partido, date):
+            partido_dt = datetime.combine(fecha_partido, datetime.min.time())
+        else:
+            return "🟡 Pendiente"
+
         if now >= partido_dt - timedelta(minutes=1):
             return "🔴 Expirada"
-
-    if isinstance(fecha_partido, str):
-        try:
-            partido_dt = datetime.fromisoformat(fecha_partido.replace("Z", ""))
-            if now >= partido_dt - timedelta(minutes=1):
-                return "🔴 Expirada"
-        except Exception:
-            pass
+    except Exception:
+        pass
 
     return "🟡 Pendiente"
 
@@ -223,7 +224,7 @@ def save_puntaje(usuario_id, id_partido, semana, puntos):
     )
 
 # -------------------------
-# RESULTADOS ADMIN (READ)
+# RESULTADOS ADMIN
 # -------------------------
 def get_resultado_admin(id_partido=None):
     sb = get_supabase()
