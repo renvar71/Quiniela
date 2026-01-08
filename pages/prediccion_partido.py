@@ -181,10 +181,22 @@ if submit:
     )
 
     st.success("✅ Predicción actualizada" if edit_mode else "✅ Predicción guardada")
+    # Borra caches útiles, flags, hace que Streamlit ejecute más de lo necesario, recarga cosas
+    # for k in list(st.session_state.keys()):
+    #     if k not in ["logged_in", "user_id","user"]:
+    #         st.session_state.pop(k)
+    # invalidar caches relacionados con predicciones
+    st.session_state.pop("predicciones_cache", None)
+    st.session_state.pop("partidos_cache", None)
 
-    for k in list(st.session_state.keys()):
-        if k not in ["logged_in", "user_id","user"]:
-            st.session_state.pop(k)
-
+    # limpiar contexto puntual del partido
+    for k in [
+        "id_partido", "semana", "local", "visitante",
+        "fecha_partido", "home_badge_url", "away_badge_url",
+        "edit_mode", "prediccion_actual",
+        "preguntas_extra", "preguntas_id_partido"
+    ]:
+        st.session_state.pop(k, None)
+    
     st.switch_page("pages/menu_predicciones.py")
     st.stop()
