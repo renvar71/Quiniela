@@ -12,12 +12,14 @@ st.markdown("""
 
 El costo será de **$1,100.00 pesos**.  
 Con este costo participas para **todas las rondas**, incluido el **Super Bowl**.
+
 Cuenta de Aportacion:
-Nombre: Rodrigo Cruz Rivas
-Banco: Banorte
-Cuenta: 1112362358
-Numero de tarjeta: 4189140052787990
-Clabe: 0721180011123623586
+
+- Nombre: Rodrigo Cruz Rivas
+- Banco: Banorte
+- Cuenta: 1112362358
+- Numero de tarjeta: 4189140052787990
+- Clabe: 0721180011123623586
 
 ---
 
