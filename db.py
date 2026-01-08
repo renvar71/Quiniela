@@ -272,3 +272,16 @@ def get_prediccion_by_user_optimized(usuario_id):
     )
 
     return res.data or []
+## Funciones centralizadas para tabla:
+def get_usuarios():
+    supabase = get_supabase()
+    res = supabase.table("usuarios").select("id, nombre").execute()
+    return res.data or []
+
+
+def get_puntajes():
+    supabase = get_supabase()
+    res = supabase.table("puntajes").select(
+        "usuario_id, puntos, semana"
+    ).execute()
+    return res.data or []
