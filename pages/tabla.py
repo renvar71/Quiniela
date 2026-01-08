@@ -1,8 +1,10 @@
 # tabla.py
 import streamlit as st
 import pandas as pd
-from supabase_config import supabase
-from db import WEEK_TITLES
+# Quitamos cliente global
+# from supabase_config import supabase
+# Importamos funciones nuevas
+from db import WEEK_TITLES, get_usuarios, get_puntajes
 
 # -------------------------
 # SESSION CHECK
@@ -13,23 +15,37 @@ if "logged_in" not in st.session_state or not st.session_state.logged_in:
 
 st.title("📊 Tabla General")
 
-# -------------------------
-# OBTENER USUARIOS
-# -------------------------
-users_res = supabase.table("usuarios") \
-    .select("id, nombre") \
-    .execute()
+# QUITAMOS QUERIES Y REVISAMOS SESSIONSTATE PARA CREAR CACHE
+# # -------------------------
+# # OBTENER USUARIOS
+# # -------------------------
+# users_res = supabase.table("usuarios") \
+#     .select("id, nombre") \
+#     .execute()
 
-users = users_res.data or []
-
+# users = users_res.data or []
 # -------------------------
-# OBTENER PUNTAJES
+# CACHE DE USUARIOS
 # -------------------------
-scores_res = supabase.table("puntajes") \
-    .select("usuario_id, puntos, semana") \
-    .execute()
+if "usuarios_cache" not in st.session_state:
+    st.session_state.usuarios_cache = get_usuarios()
 
-scores = scores_res.data or []
+users = st.session_state.usuarios_cache
+# # -------------------------
+# # OBTENER PUNTAJES
+# # -------------------------
+# scores_res = supabase.table("puntajes") \
+#     .select("usuario_id, puntos, semana") \
+#     .execute()
+
+# scores = scores_res.data or []
+# -------------------------
+# CACHE DE PUNTAJES
+# -------------------------
+if "puntajes_cache" not in st.session_state:
+    st.session_state.puntajes_cache = get_puntajes()
+
+scores = st.session_state.puntajes_cache
 
 # -------------------------
 # SEMANAS DISPONIBLES
