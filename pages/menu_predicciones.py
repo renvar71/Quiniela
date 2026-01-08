@@ -2,8 +2,8 @@
 import streamlit as st
 # Cambio 1
 # from supabase_config import supabase
-# from db import get_prediccion_status, get_prediccion_by_user, WEEK_TITLES, get_supabase, get_predicciones_by_user
-from db import WEEK_TITLES, get_supabase, get_predicciones_by_user
+# from db import get_prediccion_status, get_prediccion_by_user, WEEK_TITLES, get_supabase, get_prediccion_by_user_optimized
+from db import WEEK_TITLES, get_supabase, get_prediccion_by_user_optimized
 # -------------------------
 # SESSION CHECK
 # -------------------------
@@ -17,7 +17,7 @@ if not user_id:
 
 # Uso de nueva función similar para revisar si las predicciones ya se encuentran en cache
 if "predicciones_cache" not in st.session_state:
-    preds = get_predicciones_by_user(user_id)
+    preds = get_prediccion_by_user_optimized(user_id)
 
     # indexar por id_partido
     st.session_state.predicciones_cache = {
