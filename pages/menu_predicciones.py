@@ -2,8 +2,8 @@
 import streamlit as st
 # Cambio 1
 # from supabase_config import supabase
-from db import get_prediccion_status, get_prediccion_by_user, WEEK_TITLES, get_supabase
-
+# from db import get_prediccion_status, get_prediccion_by_user, WEEK_TITLES, get_supabase, get_predicciones_by_user
+from db import WEEK_TITLES, get_supabase, get_predicciones_by_user
 # -------------------------
 # SESSION CHECK
 # -------------------------
@@ -14,6 +14,15 @@ if not st.session_state.get("logged_in"):
 user_id = st.session_state.get("user_id")
 if not user_id:
     st.stop()
+
+# Uso de nueva función similar para revisar si las predicciones ya se encuentran en cache
+if "predicciones_cache" not in st.session_state:
+    preds = get_predicciones_by_user(user_id)
+
+    # indexar por id_partido
+    st.session_state.predicciones_cache = {
+        p["id_partido"]: p for p in preds
+    }
 
 # -------------------------
 # CONTEXT + NAV
@@ -113,9 +122,16 @@ for p in partidos:
 
     if not id_partido or not local or not visitante:
         continue
+    # Quitamos llamadas dentro del loop   
+    # estado = (user_id, id_partido, fecha)
+    # prediccion = get_prediccion_by_user(user_id, id_partido)
+    predicciones = st.session_state.predicciones_cache
+    prediccion = predicciones.get(id_partido)
 
-    estado = get_prediccion_status(user_id, id_partido, fecha)
-    prediccion = get_prediccion_by_user(user_id, id_partido)
+    estado = "🟡 Pendiente"
+    if prediccion:
+        estado = "🟢 Completado"
+
 
     item = {
         "id_partido": id_partido,
