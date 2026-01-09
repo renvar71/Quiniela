@@ -152,6 +152,7 @@ pages = [
     st.Page("pages/tabla.py", title="Tabla"),
     st.Page("pages/menu_predicciones.py", title="Mis Predicciones"),
     st.Page("pages/prediccion_partido.py", title="Predicción"),
+    st.Page("pages/resumen.py", title="Resumen"),
     st.Page("pages/info.py", title="Información Importante")
 ]
 
