@@ -73,8 +73,18 @@ def calcular_puntos_extras(pred, admin, semana):
     puntos = 0
 
     for pred_col, admin_col in rules["extra_questions"]:
-        valor_pred = pred.get(pred_col)
+        # valor_pred = pred.get(pred_col)
         valor_real = admin.get(admin_col)
+                # Pregunta no activa
+        if valor_real is None:
+            continue
+
+        # CASO EMPATE → todos ganan puntos
+        if valor_real == "Empate":
+            puntos += 3
+            continue
+        
+        valor_pred = pred.get(pred_col)
 
         # Ignora preguntas no activas o vacías
         if valor_pred is None or valor_real is None:
