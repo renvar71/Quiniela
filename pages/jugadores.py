@@ -58,7 +58,7 @@ partidos_resp = (
     supabase
     .table("partidos")
     .select(
-        "id, home_team, away_team, status"
+        "id_partido, home_team, away_team, status"
     )
     .eq("semana", semana)
     .eq("status", "finished")
@@ -85,7 +85,7 @@ if not partido_label:
     st.stop()
 
 partido_id = partidos_df.loc[
-    partidos_df["label"] == partido_label, "id"
+    partidos_df["label"] == partido_label, "id_partido"
 ].iloc[0]
 
 # -------------------------
