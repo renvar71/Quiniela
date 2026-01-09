@@ -5,6 +5,54 @@ import streamlit as st
 from datetime import datetime, timedelta
 import hashlib
 
+# WEEK_RULES para sensibilidad a la ronda
+
+WEEK_RULES = {
+    160: {
+        "title": "Ronda Comodines",
+        "multiplier": 1,
+        "extra_questions": [
+            ("extra_question_1", "pregunta1_resultado"),
+            ("extra_question_2", "pregunta2_resultado"),
+        ]
+    },
+    125: {
+        "title": "Ronda Divisional",
+        "multiplier": 1,
+        "extra_questions": [
+            ("extra_question_1", "pregunta1_resultado"),
+            ("extra_question_2", "pregunta2_resultado"),
+            ("extra_question_3", "pregunta3_resultado"),
+        ]
+    },
+    150: {
+        "title": "Campeón de Conferencia",
+        "multiplier": 1,
+        "extra_questions": [
+            ("extra_question_1", "pregunta1_resultado"),
+            ("extra_question_2", "pregunta2_resultado"),
+            ("extra_question_3", "pregunta3_resultado"),
+            ("extra_question_4", "pregunta4_resultado"),
+        ]
+    },
+    200: {
+        "title": "Super Bowl",
+        "multiplier": 2,  # 🔥 DUPLICA PUNTOS
+        "extra_questions": [
+            ("extra_question_1", "pregunta1_resultado"),
+            ("extra_question_2", "pregunta2_resultado"),
+            ("extra_question_3", "pregunta3_resultado"),
+            ("extra_question_4", "pregunta4_resultado"),
+            ("extra_question_5", "pregunta5_resultado"),
+            ("extra_question_6", "pregunta6_resultado"),
+            ("extra_question_7", "pregunta7_resultado"),
+            ("extra_question_8", "pregunta8_resultado"),
+            ("extra_question_9", "pregunta9_resultado"),
+            ("extra_question_10", "pregunta10_resultado"),
+        ]
+    }
+}
+
 # -------------------------
 # TITULOS POR SEMANA
 # -------------------------
