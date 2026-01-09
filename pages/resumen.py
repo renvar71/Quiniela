@@ -1,13 +1,14 @@
 # resumen.py
 import streamlit as st
+import random
+import pandas as pd
 from db import (
     get_partidos,
     get_prediccion_by_user,
     get_equipos,
-    WEEK_TITLES
+    WEEK_TITLES,
+    get_resultado_admin
 )
-from db import get_resultado_admin
-
 
 # -------------------------
 # SESSION CHECK
@@ -30,6 +31,14 @@ equipos_dict = {e["team_id"]: e for e in equipos}
 partidos = get_partidos()
 predicciones_usuario = []
 
+def get_preguntas_por_partido(id_partido):
+    df = pd.read_csv("preguntas.csv")
+    preguntas = df["pregunta"].dropna().tolist()
+
+    random.seed(id_partido)
+    return random.sample(preguntas, 2)
+
+
 for partido in partidos:
     
     resultado = get_resultado_admin(partido["id_partido"])
@@ -45,6 +54,8 @@ for partido in partidos:
 
     equipo_local = equipos_dict.get(partido["equipo_local_id"], {})
     equipo_visitante = equipos_dict.get(partido["equipo_visitante_id"], {})
+    pregunta_1, pregunta_2 = get_preguntas_por_partido(partido["id_partido"])
+
 
     predicciones_usuario.append({
         **partido,
@@ -53,6 +64,8 @@ for partido in partidos:
         "visitante": equipo_visitante.get("nombre", "Equipo visitante"),
         "home_badge_url": equipo_local.get("badge_url"),
         "away_badge_url": equipo_visitante.get("badge_url"),
+        "pregunta_1": pregunta_1,
+        "pregunta_2": pregunta_2,
         "linea": linea
     })
 
