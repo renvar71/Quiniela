@@ -121,7 +121,7 @@ pred_resp = (
     supabase
     .table("predicciones")
     .select("usuario_id, score_local, score_away, pick")
-    .eq("match_id", partido_id)
+    .eq("id_partido", partido_id)
     .execute()
 )
 
