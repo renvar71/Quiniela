@@ -100,7 +100,15 @@ def puntos_preguntas_extra(pred, extra_1_ok, extra_2_ok):
 
     if extra_2_ok and pred.get("extra_question_2") == extra_2_ok:
         puntos += 5
-
+        
+    # VALIDACION DE EMPATE
+    
+    if extra_1_ok == "Empate":
+        puntos += 5
+        
+    if extra_2_ok == "Empate":
+        puntos += 5
+        
     return puntos
 
 def puntos_over_under(pred, o_u):
@@ -110,7 +118,7 @@ def puntos_over_under(pred, o_u):
     return puntos
 
 # -------------------------
-# CALCULAR PUNTAJES DEL PARTIDO
+# CALCULAR PUNTAJES DEL PARTIDO FUNCION A LLAMAR, GUARDA EN SUPABASE Y REGRESA LISTA RESULTADOS
 # -------------------------
 def calcular_puntajes_partido(id_partido, semana):
     resultado = get_resultado_partido(id_partido)
