@@ -3,6 +3,7 @@ import streamlit as st
 from db import (
     get_partidos,
     get_prediccion_by_user,
+    get_equipos,
     WEEK_TITLES
 )
 
@@ -19,19 +20,30 @@ if not user_id:
     st.stop()
 
 # -------------------------
-# DATA
+# DATA BASE
 # -------------------------
-partidos = get_partidos()
+equipos = get_equipos()
+equipos_dict = {e["id"]: e for e in equipos}
 
+partidos = get_partidos()
 predicciones_usuario = []
 
 for partido in partidos:
     pred = get_prediccion_by_user(user_id, partido["id_partido"])
-    if pred:
-        predicciones_usuario.append({
-            **partido,
-            **pred
-        })
+    if not pred:
+        continue
+
+    equipo_local = equipos_dict.get(partido["equipo_local_id"], {})
+    equipo_visitante = equipos_dict.get(partido["equipo_visitante_id"], {})
+
+    predicciones_usuario.append({
+        **partido,
+        **pred,
+        "local": equipo_local.get("nombre", "Equipo local"),
+        "visitante": equipo_visitante.get("nombre", "Equipo visitante"),
+        "home_badge_url": equipo_local.get("badge_url"),
+        "away_badge_url": equipo_visitante.get("badge_url"),
+    })
 
 # -------------------------
 # UI
