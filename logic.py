@@ -120,7 +120,7 @@ def calcular_puntajes_partido(id_partido, semana):
     preds = (
         supabase
         .table("predicciones")
-        .select("usuario_id, pick, score_local, score_away, line_over_under, extra_question_1, extra_question_2")
+        .select("*") # TOMAR TODO
         .eq("id_partido", id_partido)
         .execute()
     ).data or []
@@ -154,28 +154,28 @@ def calcular_puntajes_partido(id_partido, semana):
 # -------------------------
 # RANKING TOTAL
 # -------------------------
-def ranking_general():
-    res = (
-        supabase
-        .table("puntajes")
-        .select("usuario_id, puntos")
-        .execute()
-    )
+# def ranking_general():
+#     res = (
+#         supabase
+#         .table("puntajes")
+#         .select("usuario_id, puntos")
+#         .execute()
+#     )
 
-    ranking = {}
-    for r in res.data or []:
-        ranking[r["usuario_id"]] = ranking.get(r["usuario_id"], 0) + r["puntos"]
+#     ranking = {}
+#     for r in res.data or []:
+#         ranking[r["usuario_id"]] = ranking.get(r["usuario_id"], 0) + r["puntos"]
 
-    return sorted(
-        ranking.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )
+#     return sorted(
+#         ranking.items(),
+#         key=lambda x: x[1],
+#         reverse=True
+#     )
 def get_resultado_admin_partido(id_partido):
     res = (
         supabase
         .table("resultados_admin")
-        .select("o_u_resultado, pregunta1_resultado, pregunta2_resultado")
+        .select("*") # EXTRAE TODO
         .eq("id_partido", id_partido)
         .limit(1)
         .execute()
