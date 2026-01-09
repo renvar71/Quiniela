@@ -344,3 +344,33 @@ def get_equipos():
     )
     return res.data or []
 
+# GET PARTIDOS RESUELTOS
+def get_partidos_resueltos():
+    """
+    Devuelve solo partidos finalizados
+    """
+    supabase = get_supabase()
+    res = (
+        supabase
+        .table("partidos")
+        .select("id_partido, semana")
+        .eq("finished", True)
+        .execute()
+    )
+    return res.data or []
+
+# Ya se calculó?
+def existe_partido_en_puntajes(id_partido):
+    """
+    Retorna True si ya existen puntajes calculados para el partido
+    """
+    supabase = get_supabase()
+    res = (
+        supabase
+        .table("puntajes")
+        .select("partido_id")
+        .eq("partido_id", id_partido)
+        .limit(1)
+        .execute()
+    )
+    return bool(res.data)    
