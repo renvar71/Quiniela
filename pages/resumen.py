@@ -62,8 +62,6 @@ for partido in partidos:
         **pred,
         "local": equipo_local.get("nombre", "Equipo local"),
         "visitante": equipo_visitante.get("nombre", "Equipo visitante"),
-        "home_badge_url": equipo_local.get("badge_url"),
-        "away_badge_url": equipo_visitante.get("badge_url"),
         "pregunta_1": pregunta_1,
         "pregunta_2": pregunta_2,
         "linea": linea
