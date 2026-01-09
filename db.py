@@ -285,3 +285,14 @@ def get_puntajes():
         "usuario_id, puntos, semana"
     ).execute()
     return res.data or []
+
+def get_equipos():
+    supabase = get_supabase()
+    res = (
+        supabase
+        .table("equipos")
+        .select("*")
+        .execute()
+    )
+    return res.data or []
+
