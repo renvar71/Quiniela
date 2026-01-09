@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 from supabase_config import supabase
-from constants import WEEK_TITLES  # asumo que ya existe
+from db import WEEK_TITLES  # asumo que ya existe
 
 # -------------------------
 # SESSION CHECK
