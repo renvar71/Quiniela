@@ -4,15 +4,55 @@ import pandas as pd
 # Quitamos cliente global
 # from supabase_config import supabase
 # Importamos funciones nuevas
-from db import WEEK_TITLES, get_usuarios, get_puntajes
+from db import (
+    WEEK_TITLES,
+    get_usuarios,
+    get_puntajes,
+    get_partidos_resueltos,
+    existe_partido_en_puntajes
+)
+from logic import calcular_puntajes_partido
 
 # -------------------------
 # SESSION CHECK
 # -------------------------
+
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.warning("Debes iniciar sesión")
     st.stop()
 
+# -------------------------
+# CACHE DE PARTIDOS FINALIZADOS
+# -------------------------
+
+if "partidos_cache" not in st.session_state:
+    st.session_state.partidos_cache = get_partidos_resueltos()
+
+partidos = st.session_state.partidos_cache
+
+# -------------------------
+# CÁLCULO AUTOMÁTICO DE PUNTAJES
+# -------------------------
+
+if "puntajes_calculados" not in st.session_state:
+    st.session_state.puntajes_calculados = False
+
+if not st.session_state.puntajes_calculados:
+    hubo_cambios = False
+
+    for p in partidos:
+        partido_id = p["id_partido"]
+        semana = p["semana"]
+
+        if not existe_partido_en_puntajes(partido_id):
+            calcular_puntajes_partido(partido_id, semana)
+            hubo_cambios = True
+
+    if hubo_cambios:
+        st.session_state.puntajes_cache = get_puntajes()
+
+    st.session_state.puntajes_calculados = True
+    
 st.title("📊 Tabla General")
 
 # QUITAMOS QUERIES Y REVISAMOS SESSIONSTATE PARA CREAR CACHE
