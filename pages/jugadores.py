@@ -120,7 +120,7 @@ partido_id = partidos_df.loc[
 pred_resp = (
     supabase
     .table("predicciones")
-    .select("user_id, home_score, away_score, winner")
+    .select("usuario_id, home_score, away_score, winner")
     .eq("match_id", partido_id)
     .execute()
 )
@@ -134,7 +134,7 @@ pred_df = pd.DataFrame(pred_resp.data)
 # -------------------------
 # RESOLVER USERNAMES
 # -------------------------
-user_ids = pred_df["user_id"].unique().tolist()
+user_ids = pred_df["usuario_id"].unique().tolist()
 
 users_resp = (
     supabase
@@ -149,7 +149,7 @@ user_map = {
     for u in users_resp.data
 }
 
-pred_df["username"] = pred_df["user_id"].map(user_map)
+pred_df["username"] = pred_df["usuario_id"].map(user_map)
 
 df = pred_df.rename(columns={
     "home_score": "Local",
@@ -177,14 +177,14 @@ if df.empty:
 # -------------------------
 # ORDENAR (yo primero)
 # -------------------------
-df["__orden"] = df["user_id"] != user_id
+df["__orden"] = df["usuario_id"] != user_id
 df = df.sort_values("__orden").drop(columns="__orden")
 
 # -------------------------
 # HIGHLIGHT MI PREDICCIÓN
 # -------------------------
 def highlight_user(row):
-    if row["user_id"] == user_id:
+    if row["usuario_id"] == user_id:
         return ["background-color: #1f77b4; color: white"] * len(row)
     return [""] * len(row)
 
