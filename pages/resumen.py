@@ -1,6 +1,10 @@
 # resumen.py
 import streamlit as st
-from db import get_prediccion_by_user, WEEK_TITLES
+from db import (
+    get_partidos,
+    get_prediccion_by_user,
+    WEEK_TITLES
+)
 
 # -------------------------
 # SESSION CHECK
@@ -17,31 +21,41 @@ if not user_id:
 # -------------------------
 # DATA
 # -------------------------
-predicciones = get_prediccion_by_user(user_id)
+partidos = get_partidos()
+
+predicciones_usuario = []
+
+for partido in partidos:
+    pred = get_prediccion_by_user(user_id, partido["id_partido"])
+    if pred:
+        predicciones_usuario.append({
+            **partido,
+            **pred
+        })
 
 # -------------------------
 # UI
 # -------------------------
 st.title("📊 Mis Predicciones")
 
-if not predicciones:
+if not predicciones_usuario:
     st.info("Todavía no tienes predicciones registradas")
 
-    if st.button("Registra tu primera predicciñon y la podrás ver aquí"):
-        st.switch_page("pages/prediccion_partido.py")
+    if st.button("🎯 Registrar mi primera predicción"):
+        st.switch_page("pages/menu_predicciones.py")
 
     st.stop()
 
 # -------------------------
-# LISTADO DE PREDICCIONES
+# LISTADO
 # -------------------------
-for pred in predicciones:
+for pred in predicciones_usuario:
 
     st.divider()
 
     st.subheader(WEEK_TITLES.get(pred["semana"], f"Semana {pred['semana']}"))
     st.write(f"**{pred['local']} vs {pred['visitante']}**")
-    st.caption(pred["fecha_partido"])
+    st.caption(pred["fecha"])
 
     col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
 
