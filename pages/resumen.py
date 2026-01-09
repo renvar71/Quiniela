@@ -71,7 +71,7 @@ for partido in partidos:
 # -------------------------
 # UI
 # -------------------------
-st.title("📊 Mis Predicciones")
+st.title("📊 Resumen de Mis Predicciones")
 
 if not predicciones_usuario:
     st.info("Todavía no tienes predicciones registradas")
