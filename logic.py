@@ -96,18 +96,18 @@ def puntos_preguntas_extra(pred, extra_1_ok, extra_2_ok):
     puntos = 0
 
     if extra_1_ok and pred.get("extra_question_1") == extra_1_ok:
-        puntos += 5
+        puntos += 3
 
     if extra_2_ok and pred.get("extra_question_2") == extra_2_ok:
-        puntos += 5
+        puntos += 3
         
     # VALIDACION DE EMPATE
     
     if extra_1_ok == "Empate":
-        puntos += 5
+        puntos += 3
         
     if extra_2_ok == "Empate":
-        puntos += 5
+        puntos += 3
         
     return puntos
 
