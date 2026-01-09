@@ -1,9 +1,6 @@
-#menu_predicciones.py
 import streamlit as st
-# Cambio 1
-# from supabase_config import supabase
-# from db import get_prediccion_status, get_prediccion_by_user, WEEK_TITLES, get_supabase, get_prediccion_by_user_optimized
-from db import WEEK_TITLES, get_supabase, get_prediccion_by_user_optimized
+from db import WEEK_TITLES, get_supabase, get_prediccion_by_user_optimized, get_prediccion_status
+
 # -------------------------
 # SESSION CHECK
 # -------------------------
@@ -15,11 +12,11 @@ user_id = st.session_state.get("user_id")
 if not user_id:
     st.stop()
 
-# Uso de nueva función similar para revisar si las predicciones ya se encuentran en cache
+# -------------------------
+# CACHE DE PREDICCIONES
+# -------------------------
 if "predicciones_cache" not in st.session_state:
     preds = get_prediccion_by_user_optimized(user_id)
-
-    # indexar por id_partido
     st.session_state.predicciones_cache = {
         p["id_partido"]: p for p in preds
     }
@@ -52,30 +49,8 @@ def _set_context_and_go(p):
 # -------------------------
 # OBTENER PARTIDOS
 # -------------------------
-# Cambio 2
-# Cacheamos para que no se carguen cada vez que se hace una visita a la pagina
-# res = (
-#     supabase
-#     .table("partidos")
-#     .select(
-#         """
-#         id_partido,
-#         semana,
-#         fecha,
-#         local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
-#         visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, badge_url),
-#         home_badge_url,
-#         away_badge_url
-#         """
-#     )
-#     .order("fecha")
-#     .execute()
-# )
-
-# partidos = res.data or []
 if "partidos_cache" not in st.session_state:
     supabase = get_supabase()
-
     res = (
         supabase
         .table("partidos")
@@ -93,11 +68,10 @@ if "partidos_cache" not in st.session_state:
         .order("fecha")
         .execute()
     )
-
     st.session_state.partidos_cache = res.data or []
 
-# usar SIEMPRE desde sesión
 partidos = st.session_state.partidos_cache
+
 # -------------------------
 # FILTRAR POR SEMANA MÁS ALTA
 # -------------------------
@@ -108,46 +82,44 @@ else:
     max_semana = None
 
 # -------------------------
-# SEPARAR PENDIENTES Y COMPLETADOS
+# SEPARAR PENDIENTES / COMPLETADOS
 # -------------------------
 pendientes = []
 completados = []
 
 for p in partidos:
     id_partido = p.get("id_partido")
-    semana = p.get("semana")
     fecha = p.get("fecha")
     local = p.get("local", {}).get("nombre")
     visitante = p.get("visitante", {}).get("nombre")
 
     if not id_partido or not local or not visitante:
         continue
-    # Quitamos llamadas dentro del loop   
-    # estado = (user_id, id_partido, fecha)
-    # prediccion = get_prediccion_by_user(user_id, id_partido)
+
     predicciones = st.session_state.predicciones_cache
     prediccion = predicciones.get(id_partido)
 
-    estado = "🟡 Pendiente"
-    if prediccion:
-        estado = "🟢 Completado"
-
+    status = get_prediccion_status(user_id, id_partido, fecha)
 
     item = {
         "id_partido": id_partido,
-        "semana": semana,
+        "semana": p.get("semana"),
         "fecha": fecha,
         "local": local,
         "visitante": visitante,
         "home_badge_url": p.get("home_badge_url"),
         "away_badge_url": p.get("away_badge_url"),
-        "prediccion": prediccion
+        "prediccion": prediccion,
+        "status": status
     }
 
-    if estado == "🟡 Pendiente":
-        pendientes.append(item)
-    else:
+    # Regla UX:
+    # - Si existe predicción → Completados
+    # - Si NO existe → Pendientes (aunque esté expirada)
+    if prediccion:
         completados.append(item)
+    else:
+        pendientes.append(item)
 
 # -------------------------
 # UI
@@ -172,8 +144,22 @@ with col_pend:
 
     for p in pendientes:
         label = f"{p['local']} vs {p['visitante']}"
+        expirada = p["status"] == "🔴 Expirada"
 
-        if st.button(label, key=f"pend_{p['id_partido']}", use_container_width=True):
+        btn = st.button(
+            label,
+            key=f"pend_{p['id_partido']}",
+            use_container_width=True,
+            disabled=expirada
+        )
+
+        if expirada:
+            st.markdown(
+                "<span style='color:red; font-size:12px;'>Predicción expirada</span>",
+                unsafe_allow_html=True
+            )
+
+        if btn and not expirada:
             _set_context_and_go(p)
 
 # -------------------------
@@ -181,10 +167,10 @@ with col_pend:
 # -------------------------
 with col_comp:
     st.subheader("Completados 🟢")
-    st.markdown("*Selecciona el partido que quieras editar*")
+    st.markdown("*Predicciones registradas*")
 
     if not completados:
-        st.info("¡Llena tu primera predicción")
+        st.info("¡Llena tu primera predicción!")
 
     for p in completados:
         label = f"{p['local']} vs {p['visitante']}"
