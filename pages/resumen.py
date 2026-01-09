@@ -23,7 +23,7 @@ if not user_id:
 # DATA BASE
 # -------------------------
 equipos = get_equipos()
-equipos_dict = {e["id"]: e for e in equipos}
+equipos_dict = {e["team_id"]: e for e in equipos}
 
 partidos = get_partidos()
 predicciones_usuario = []
