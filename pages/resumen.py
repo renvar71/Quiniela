@@ -1,6 +1,6 @@
 # resumen.py
 import streamlit as st
-from db import get_predicciones_usuario, WEEK_TITLES
+from db import get_prediccion_by_user, WEEK_TITLES
 
 # -------------------------
 # SESSION CHECK
@@ -17,7 +17,7 @@ if not user_id:
 # -------------------------
 # DATA
 # -------------------------
-predicciones = get_predicciones_usuario(user_id)
+predicciones = get_prediccion_by_user(user_id)
 
 # -------------------------
 # UI
