@@ -79,13 +79,13 @@ equipo_ids = set(
 equipos_resp = (
     supabase
     .table("equipos")
-    .select("id_equipo, nombre")
-    .in_("id_equipo", list(equipo_ids))
+    .select("team_id, nombre")
+    .in_("team_id", list(equipo_ids))
     .execute()
 )
 
 equipos_map = {
-    e["id_equipo"]: e["nombre"]
+    e["team_id"]: e["nombre"]
     for e in equipos_resp.data
 }
 
