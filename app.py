@@ -153,6 +153,7 @@ pages = [
     st.Page("pages/menu_predicciones.py", title="Mis Predicciones"),
     st.Page("pages/prediccion_partido.py", title="Predicción"),
     st.Page("pages/resumen.py", title="Resumen"),
+    st.Page("pages/jugadores.py", title="Pick vs. Pick"),
     st.Page("pages/info.py", title="Información Importante")
 ]
 
