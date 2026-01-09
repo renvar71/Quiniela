@@ -120,7 +120,7 @@ partido_id = partidos_df.loc[
 pred_resp = (
     supabase
     .table("predicciones")
-    .select("usuario_id, home_score, away_score, winner")
+    .select("usuario_id, score_local, score_away, winner")
     .eq("match_id", partido_id)
     .execute()
 )
@@ -152,8 +152,8 @@ user_map = {
 pred_df["username"] = pred_df["usuario_id"].map(user_map)
 
 df = pred_df.rename(columns={
-    "home_score": "Local",
-    "away_score": "Visitante",
+    "score_local": "Local",
+    "score_away": "Visitante",
     "winner": "Ganador"
 })
 
