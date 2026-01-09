@@ -58,13 +58,18 @@ Se llenarán las predicciones de cada partido, ahí se encuentra la
 - **10 puntos** → Equipo ganador  
 - **30 puntos** → Marcador exacto  
 - **8 puntos** → Ganador de altas o bajas  
-  - La línea se pondrá por juego  
-  - (Datos obtenidos de *The Lines*)  
+  - La línea se define por partido  
+  - *(Datos obtenidos de The Lines)*  
 - **3 puntos** → Pregunta extra  
 
-En estas rondas se harán **2 preguntas extra por partido**.
+### 📌 Distribución de preguntas extra
+
+- **Ronda de Comodín** → 2 preguntas extra por partido  
+- **Ronda Divisional** → 3 preguntas extra por partido  
+- **Ronda de Campeonato** → 4 preguntas extra por partido  
 
 ---
+
 
 ## 🏆 Super Bowl
 
