@@ -6,6 +6,8 @@ from db import (
     get_equipos,
     WEEK_TITLES
 )
+from db import get_resultado_admin
+
 
 # -------------------------
 # SESSION CHECK
@@ -29,6 +31,14 @@ partidos = get_partidos()
 predicciones_usuario = []
 
 for partido in partidos:
+    
+    resultado = get_resultado_admin(partido["id_partido"])
+
+    if resultado:
+        linea = resultado[0].get("linea")
+    else:
+        linea = "N/A"
+
     pred = get_prediccion_by_user(user_id, partido["id_partido"])
     if not pred:
         continue
@@ -43,7 +53,9 @@ for partido in partidos:
         "visitante": equipo_visitante.get("nombre", "Equipo visitante"),
         "home_badge_url": equipo_local.get("badge_url"),
         "away_badge_url": equipo_visitante.get("badge_url"),
+        "linea": linea
     })
+
 
 # -------------------------
 # UI
