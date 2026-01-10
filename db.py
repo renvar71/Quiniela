@@ -255,7 +255,9 @@ def has_prediccion(usuario_id, id_partido):
 # -------------------------
 # ESTADO PREDICCIÓN
 # -------------------------
-from datetime import datetime, timedelta, date
+# CAMBIOS PARA DESHABILITAR PREDICCION CONSIDERANDO TABLA EN UTC
+#from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, timezone
 
 def get_prediccion_status(usuario_id, id_partido, fecha_partido):
     # -------------------------
@@ -264,7 +266,8 @@ def get_prediccion_status(usuario_id, id_partido, fecha_partido):
     if not usuario_id or not id_partido:
         return "🟡 Pendiente"
 
-    now = datetime.now()
+    #cnow = datetime.now()
+    now = datetime.now(timezone.utc)
 
     # -------------------------
     # QUERY SEGURA
@@ -279,16 +282,32 @@ def get_prediccion_status(usuario_id, id_partido, fecha_partido):
         .limit(1)
         .execute()
     )
-
+    def _is_expired(dt):
+        return now >= dt - timedelta(minutes=1)
     # -------------------------
     # FECHA DESDE DB
     # -------------------------
+
+    # if res.data:
+    #     db_fecha = res.data[0].get("fecha_partido")
+    #     if isinstance(db_fecha, str):
+    #         try:
+    #             partido_dt = datetime.fromisoformat(db_fecha.replace("Z", ""))
+    #             if now >= partido_dt - timedelta(minutes=1):
+    #                 return "🔴 Expirada"
+    #         except Exception:
+    #             pass
+    #     return "🟢 Registrada"
+
     if res.data:
         db_fecha = res.data[0].get("fecha_partido")
         if isinstance(db_fecha, str):
             try:
-                partido_dt = datetime.fromisoformat(db_fecha.replace("Z", ""))
-                if now >= partido_dt - timedelta(minutes=1):
+                partido_dt = datetime.fromisoformat(
+                    db_fecha.replace("Z", "+00:00")
+                ).astimezone(timezone.utc)
+
+                if _is_expired(partido_dt):
                     return "🔴 Expirada"
             except Exception:
                 pass
@@ -297,19 +316,32 @@ def get_prediccion_status(usuario_id, id_partido, fecha_partido):
     # -------------------------
     # FECHA DESDE CONTEXTO
     # -------------------------
-    if isinstance(fecha_partido, (datetime, date)):
-        partido_dt = (
-            fecha_partido
-            if isinstance(fecha_partido, datetime)
-            else datetime.combine(fecha_partido, datetime.min.time())
-        )
-        if now >= partido_dt - timedelta(minutes=1):
-            return "🔴 Expirada"
+    # if isinstance(fecha_partido, (datetime, date)):
+    #     partido_dt = (
+    #         fecha_partido
+    #         if isinstance(fecha_partido, datetime)
+    #         else datetime.combine(fecha_partido, datetime.min.time())
+    #     )
+    #     if now >= partido_dt - timedelta(minutes=1):
+    #         return "🔴 Expirada"
 
+    # if isinstance(fecha_partido, str):
+    #     try:
+    #         partido_dt = datetime.fromisoformat(fecha_partido.replace("Z", ""))
+    #         if now >= partido_dt - timedelta(minutes=1):
+    #             return "🔴 Expirada"
+    #     except Exception:
+    #         pass
+
+    # return "🟡 Pendiente"
+    # ---------- FECHA DESDE PARTIDOS ----------
     if isinstance(fecha_partido, str):
         try:
-            partido_dt = datetime.fromisoformat(fecha_partido.replace("Z", ""))
-            if now >= partido_dt - timedelta(minutes=1):
+            partido_dt = datetime.fromisoformat(
+                fecha_partido.replace("Z", "+00:00")
+            ).astimezone(timezone.utc)
+
+            if _is_expired(partido_dt):
                 return "🔴 Expirada"
         except Exception:
             pass
