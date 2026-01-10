@@ -174,6 +174,21 @@ with col_comp:
 
     for p in completados:
         label = f"{p['local']} vs {p['visitante']}"
+        expirada = p["status"] == "🔴 Expirada"
 
-        if st.button(label, key=f"comp_{p['id_partido']}", use_container_width=True):
+        btn = st.button(
+            label,
+            key=f"comp_{p['id_partido']}",
+            use_container_width=True,
+            disabled=expirada
+        )
+
+        if expirada:
+            st.markdown(
+                "<span style='color:red; font-size:12px;'>Partido iniciado — edición bloqueada</span>",
+                unsafe_allow_html=True
+            )
+
+        if btn and not expirada:
             _set_context_and_go(p)
+
