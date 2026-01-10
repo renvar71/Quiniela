@@ -3,9 +3,8 @@ import streamlit as st
 from datetime import datetime, date
 import pandas as pd
 import requests
-# Quitamos cliente Cambio 1
-# from supabase_config import supabase
 from db import get_prediccion_status, WEEK_TITLES, get_partidos, get_supabase
+from zoneinfo import ZoneInfo 
 
 # -------------------------
 # CONFIG
@@ -148,7 +147,9 @@ for p in futuros:
     fecha_fmt = "Por definir"
     if fecha_db:
         try:
-            fecha_fmt = datetime.fromisoformat(fecha_db).strftime("%d %b %Y")
+            fecha_utc = datetime.fromisoformat(fecha_db).replace(tzinfo=ZoneInfo("UTC"))
+            fecha_cst = fecha_utc.astimezone(ZoneInfo("America/Mexico_City"))
+            fecha_fmt = fecha_cst.strftime("%d %b %Y %H:%M")
         except ValueError:
             pass
 
