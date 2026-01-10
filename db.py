@@ -1,6 +1,4 @@
-# SE DEJA DE IMPORTAR GLOBALMENTE
-# from supabase_config import supabase
-# Buscamos que db.py reciba el cliente de manera dinámica y para esto instalamos el helper
+# db.py
 import streamlit as st
 from datetime import datetime, timedelta
 import hashlib
