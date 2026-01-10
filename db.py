@@ -160,11 +160,43 @@ def get_partidos(semana=None):
 # -------------------------
 # PREDICCIONES
 # -------------------------
+
+
+# def save_prediccion(
+#     usuario_id,
+#     id_partido,
+#     semana,
+#     fecha_partido,
+#     pick,
+#     score_local=None,
+#     score_away=None,
+#     line_over_under=None,
+#     extra_question_1=None,
+#     extra_question_2=None
+# ):
+#     supabase = get_supabase()
+#     supabase.table("predicciones").upsert(
+#         {
+#             "usuario_id": usuario_id,
+#             "id_partido": id_partido,
+#             "semana": semana,
+#             "pick": pick,
+#             "score_local": score_local,
+#             "score_away": score_away,
+#             "line_over_under": line_over_under,
+#             "extra_question_1": extra_question_1,
+#             "extra_question_2": extra_question_2,
+#             "fecha_partido": fecha_partido
+#         },
+#         on_conflict="usuario_id,id_partido"
+#     ).execute()
+
+# CAMBIO MÍNIMO A SAVE_PREDICCION
 def save_prediccion(
     usuario_id,
     id_partido,
     semana,
-    fecha_partido,
+    fecha_partido,  # se deja por compatibilidad, pero NO se usa
     pick,
     score_local=None,
     score_away=None,
@@ -173,6 +205,25 @@ def save_prediccion(
     extra_question_2=None
 ):
     supabase = get_supabase()
+
+    # 1️⃣ Leer SIEMPRE la fecha real desde partidos
+    res = (
+        supabase
+        .table("partidos")
+        .select("fecha")
+        .eq("id_partido", id_partido)
+        .limit(1)
+        .execute()
+    )
+
+    # 2️⃣ Tomar la fecha correcta
+    fecha_real = res.data[0]["fecha"] if res.data else None
+
+    # (opcional pero recomendable)
+    if not fecha_real:
+        raise RuntimeError(f"No se encontró fecha para partido {id_partido}")
+
+    # 3️⃣ Guardar predicción usando SOLO la fecha real
     supabase.table("predicciones").upsert(
         {
             "usuario_id": usuario_id,
@@ -184,10 +235,12 @@ def save_prediccion(
             "line_over_under": line_over_under,
             "extra_question_1": extra_question_1,
             "extra_question_2": extra_question_2,
-            "fecha_partido": fecha_partido
+            "fecha_partido": fecha_real
         },
         on_conflict="usuario_id,id_partido"
     ).execute()
+
+
 # QUITAR DOBLE UPSERT
 def has_prediccion(usuario_id, id_partido):
     supabase = get_supabase()
