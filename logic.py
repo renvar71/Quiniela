@@ -10,7 +10,7 @@ def get_resultado_partido(id_partido):
     res = (
         supabase
         .table("partidos")
-        .select("score_local, score_away, finished")
+        .select("score_local, score_away, status")
         .eq("id_partido", id_partido)
         .limit(1)
         .execute()
@@ -21,7 +21,11 @@ def get_resultado_partido(id_partido):
 
     p = res.data[0]
 
-    if not p["finished"]:
+    if p["status"] != "finished":
+        return None
+
+    # protección extra
+    if p["score_local"] is None or p["score_away"] is None:
         return None
 
     return {
@@ -29,6 +33,7 @@ def get_resultado_partido(id_partido):
         "score_away": p["score_away"],
         "winner": calcular_ganador(p["score_local"], p["score_away"])
     }
+
 
 # -------------------------
 # LÓGICA DE RESULTADOS
