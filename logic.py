@@ -59,7 +59,7 @@ def get_resultado_partido(id_partido):
     return {
         "score_local": p["score_local"],
         "score_away": p["score_away"],
-        "winnder_name": ganador_nombre
+        "winner_name": ganador_nombre
         # "equipo_local_id": p["equipo_local_id"],
         # "equipo_visitante_id": p["equipo_visitante_id"],
     }
