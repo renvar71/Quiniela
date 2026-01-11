@@ -4,6 +4,33 @@ from db import WEEK_RULES
 # -------------------------
 # RESULTADO REAL DEL PARTIDO
 # -------------------------
+
+# nombre de equipo:
+def get_nombre_equipo(team_id):
+    res = (
+        supabase
+        .table("equipos")
+        .select("nombre")
+        .eq("team_id", team_id)
+        .limit(1)
+        .execute()
+    )
+    if not res.data:
+        return None
+    return res.data[0]["nombre"]
+
+def calcular_ganador_nombre(partido):
+    """
+    RETORNA EL NOMBRE DEL EQUIPO GANADOR O NONE SI HAY EMPATE
+    """
+    if partido["score_local"] > partido["score_away"]:
+        return get_nombre_equipo(partido["equipo_local_id"])
+        
+    if partido["score_away"] > partido["score_local"]:
+        return get_nombre_equipo(partido["equipo_visitante_id"])
+        
+    return None # Empate
+
 def get_resultado_partido(id_partido):
     res = (
         supabase
@@ -27,14 +54,15 @@ def get_resultado_partido(id_partido):
     if p["score_local"] is None or p["score_away"] is None:
         return None
 
+    ganador_nombre = calcular_ganador_nombre(p) # Cambio 1
+
     return {
         "score_local": p["score_local"],
         "score_away": p["score_away"],
-        "equipo_local_id": p["equipo_local_id"],
-        "equipo_visitante_id": p["equipo_visitante_id"],
+        "winnder_name": gandor_nombre
+        # "equipo_local_id": p["equipo_local_id"],
+        # "equipo_visitante_id": p["equipo_visitante_id"],
     }
-
-
 # -------------------------
 # RESULTADO ADMIN
 # -------------------------
@@ -57,7 +85,7 @@ def get_resultado_admin_partido(id_partido):
 # -------------------------
 # PUNTAJE BASE
 # -------------------------
-def calcular_puntaje_prediccion(pred, resultado, admin):
+def calcular_puntaje_prediccion(pred, resultado): # Cambio 2
     """
     Reglas:
     - Marcador exacto: 40 pts
@@ -71,13 +99,14 @@ def calcular_puntaje_prediccion(pred, resultado, admin):
         return 40
 
     # 🏆 Ganador correcto (por team_id)
-    winner_team_id = admin.get("winner_team_id")
+    # winner_team_id = admin.get("winner_team_id")
 
-    if winner_team_id and pred["pick"] == winner_team_id:
+    # if winner_team_id and pred["pick"] == winner_team_id:
+    #     return 10
+    if resultado["winner_name"] and pred["pick"] == resultado["winner_name"]:
         return 10
 
     return 0
-
 
 # -------------------------
 # PUNTOS EXTRA
@@ -143,7 +172,7 @@ def calcular_puntajes_partido(id_partido, semana):
     resultados = []
 
     for p in preds:
-        puntos_base = calcular_puntaje_prediccion(p, resultado, admin)
+        puntos_base = calcular_puntaje_prediccion(p, resultado) # Cambio 3
         puntos_ou = puntos_over_under(p, admin.get("o_u_resultado"))
         puntos_extra = calcular_puntos_extras(p, admin, semana)
 
