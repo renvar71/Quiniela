@@ -444,16 +444,15 @@ def get_partidos_resueltos():
 
 # Ya se calculó?
 def existe_partido_en_puntajes(id_partido):
-    """
-    Retorna True si ya existen puntajes calculados para el partido
-    """
     supabase = get_supabase()
     res = (
         supabase
         .table("puntajes")
-        .select("partido_id")
+        .select("id")
         .eq("partido_id", id_partido)
+        .not_.is_("puntos", None)
         .limit(1)
         .execute()
     )
-    return bool(res.data)    
+    return bool(res.data)
+  
