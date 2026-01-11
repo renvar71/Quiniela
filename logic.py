@@ -110,27 +110,30 @@ def calcular_puntajes_partido(id_partido, semana):
     if not resultado:
         return []
 
-    admin = get_resultado_admin_partido(id_partido)
-    if not admin:
-        return []
+    admin = get_resultado_admin_partido(id_partido)  # puede ser None
 
-    rules = WEEK_RULES.get(semana, {"multiplier": 1}) # Para el superBowl
+    rules = WEEK_RULES.get(semana, {"multiplier": 1})
     multiplier = rules["multiplier"]
-     
+
     preds = (
         supabase
         .table("predicciones")
-        .select("*") # TOMAR TODO
+        .select("*")
         .eq("id_partido", id_partido)
         .execute()
     ).data or []
 
     resultados = []
-    
+
     for p in preds:
         puntos_base = calcular_puntaje_prediccion(p, resultado)
-        puntos_ou = puntos_over_under(p, admin.get("o_u_resultado"))
-        puntos_extra = calcular_puntos_extras(p, admin, semana)
+
+        puntos_ou = 0
+        puntos_extra = 0
+
+        if admin:
+            puntos_ou = puntos_over_under(p, admin.get("o_u_resultado"))
+            puntos_extra = calcular_puntos_extras(p, admin, semana)
 
         puntos_totales = (puntos_base + puntos_ou + puntos_extra) * multiplier
 
@@ -143,7 +146,7 @@ def calcular_puntajes_partido(id_partido, semana):
             },
             on_conflict="usuario_id,partido_id"
         ).execute()
-        
+
         resultados.append({
             "usuario_id": p["usuario_id"],
             "id_partido": id_partido,
@@ -151,6 +154,7 @@ def calcular_puntajes_partido(id_partido, semana):
         })
 
     return resultados
+
 # -------------------------
 # RANKING TOTAL
 # -------------------------
