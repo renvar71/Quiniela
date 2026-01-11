@@ -3,9 +3,21 @@ from supabase_config import supabase
 from api import API_KEY
 # Agregamos week_rules
 from db import WEEK_RULES
+
+# -------------------------
+# LÓGICA DE RESULTADOS
+# -------------------------
+def calcular_ganador(score_local, score_away):
+    if score_local > score_away:
+        return "Local"
+    elif score_away > score_local:
+        return "Visitante"
+    return "Empate"
+    
 # -------------------------
 # RESULTADO REAL DEL PARTIDO
 # -------------------------
+
 def get_resultado_partido(id_partido):
     res = (
         supabase
@@ -33,17 +45,6 @@ def get_resultado_partido(id_partido):
         "score_away": p["score_away"],
         "winner": calcular_ganador(p["score_local"], p["score_away"])
     }
-
-
-# -------------------------
-# LÓGICA DE RESULTADOS
-# -------------------------
-def calcular_ganador(score_local, score_away):
-    if score_local > score_away:
-        return "Local"
-    elif score_away > score_local:
-        return "Visitante"
-    return "Empate"
 
 
 # -------------------------
