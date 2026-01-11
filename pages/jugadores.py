@@ -28,11 +28,7 @@ semanas_resp = (
     .execute()
 )
 
-if not semanas_resp.data:
-    st.warning("No hay semanas registradas")
-    st.stop()
-
-semanas = sorted({row["semana"] for row in semanas_resp.data})
+semanas = sorted({r["semana"] for r in semanas_resp.data})
 
 semana_labels = {
     s: WEEK_TITLES.get(s, f"Semana {s}")
@@ -45,14 +41,9 @@ semana_label = st.selectbox(
 )
 
 if not semana_label:
-    st.info("Selecciona una semana para continuar")
     st.stop()
 
-# recuperar número de semana
-semana = next(
-    k for k, v in semana_labels.items()
-    if v == semana_label
-)
+semana = next(k for k, v in semana_labels.items() if v == semana_label)
 
 # -------------------------
 # SELECT PARTIDO (FINALIZADOS)
@@ -67,20 +58,18 @@ partidos_resp = (
 )
 
 if not partidos_resp.data:
-    st.warning("No hay partidos finalizados para esta semana")
+    st.warning("No hay partidos finalizados")
     st.stop()
 
 partidos_df = pd.DataFrame(partidos_resp.data)
 
 # -------------------------
-# RESOLVER NOMBRES DE EQUIPOS
+# RESOLVER EQUIPOS
 # -------------------------
-equipo_ids = list(
-    set(
-        partidos_df["equipo_local_id"].tolist()
-        + partidos_df["equipo_visitante_id"].tolist()
-    )
-)
+equipo_ids = list(set(
+    partidos_df["equipo_local_id"].tolist()
+    + partidos_df["equipo_visitante_id"].tolist()
+))
 
 equipos_resp = (
     supabase
@@ -90,35 +79,23 @@ equipos_resp = (
     .execute()
 )
 
-equipos_map = {
-    e["team_id"]: e["nombre"]
-    for e in equipos_resp.data
-}
+equipos_map = {e["team_id"]: e["nombre"] for e in equipos_resp.data}
 
 partidos_df["label"] = partidos_df.apply(
-    lambda r: (
-        f"{equipos_map.get(r['equipo_local_id'], '—')} "
-        f"vs "
-        f"{equipos_map.get(r['equipo_visitante_id'], '—')}"
-    ),
+    lambda r: f"{equipos_map.get(r['equipo_local_id'], '—')} vs {equipos_map.get(r['equipo_visitante_id'], '—')}",
     axis=1
 )
 
-# -------------------------
-# SELECT PARTIDO
-# -------------------------
 partido_label = st.selectbox(
     "Partido",
     options=[None] + partidos_df["label"].tolist()
 )
 
 if not partido_label:
-    st.info("Selecciona un partido finalizado")
     st.stop()
 
 partido_id = partidos_df.loc[
-    partidos_df["label"] == partido_label,
-    "id_partido"
+    partidos_df["label"] == partido_label, "id_partido"
 ].iloc[0]
 
 # -------------------------
@@ -133,7 +110,7 @@ pred_resp = (
 )
 
 if not pred_resp.data:
-    st.warning("Ningún jugador registró predicción para este partido")
+    st.warning("No hay predicciones")
     st.stop()
 
 pred_df = pd.DataFrame(pred_resp.data)
@@ -141,7 +118,7 @@ pred_df = pd.DataFrame(pred_resp.data)
 # -------------------------
 # RESOLVER USUARIOS
 # -------------------------
-user_ids = pred_df["usuario_id"].dropna().unique().tolist()
+user_ids = pred_df["usuario_id"].unique().tolist()
 
 users_resp = (
     supabase
@@ -151,15 +128,12 @@ users_resp = (
     .execute()
 )
 
-user_map = {
-    u["id"]: u["nombre"]
-    for u in users_resp.data
-}
+user_map = {u["id"]: u["nombre"] for u in users_resp.data}
 
 pred_df["username"] = pred_df["usuario_id"].map(user_map)
 
 # -------------------------
-# FORMATEAR DATAFRAME
+# FORMATEAR DF
 # -------------------------
 df = pred_df.rename(columns={
     "score_local": "Local",
@@ -168,46 +142,42 @@ df = pred_df.rename(columns={
 })
 
 # -------------------------
-# FILTER JUGADORES
+# FILTRO JUGADORES
 # -------------------------
-jugadores_disponibles = (
-    df["username"]
-    .dropna()
-    .unique()
-    .tolist()
-)
+jugadores = df["username"].dropna().unique().tolist()
 
-jugadores_seleccionados = st.multiselect(
+seleccionados = st.multiselect(
     "Comparar con jugadores",
-    options=jugadores_disponibles,
-    default=jugadores_disponibles
+    jugadores,
+    default=jugadores
 )
 
-df = df[df["username"].isin(jugadores_seleccionados)]
-
-if df.empty:
-    st.warning("No hay jugadores seleccionados para comparar")
-    st.stop()
+df = df[df["username"].isin(seleccionados)]
 
 # -------------------------
-# ORDENAR (YO PRIMERO)
+# ORDEN (YO PRIMERO)
 # -------------------------
 df["__orden"] = df["usuario_id"] != user_id
 df = df.sort_values("__orden").drop(columns="__orden")
 
 # -------------------------
-# HIGHLIGHT MI PREDICCIÓN
+# STYLER (FIX DEFINITIVO)
 # -------------------------
 def highlight_user(row):
     if row["usuario_id"] == user_id:
         return ["background-color: #1f77b4; color: white"] * len(row)
     return [""] * len(row)
 
+styled_df = (
+    df[["usuario_id", "username", "Local", "Visitante", "Ganador"]]
+    .style
+    .apply(highlight_user, axis=1)
+    .hide(axis="columns", subset=["usuario_id"])
+)
+
 st.caption(f"Comparando {len(df)} predicciones")
 
 st.dataframe(
-    df[["username", "Local", "Visitante", "Ganador"]]
-    .style
-    .apply(highlight_user, axis=1),
+    styled_df,
     use_container_width=True
 )
