@@ -138,14 +138,14 @@ user_ids = pred_df["usuario_id"].unique().tolist()
 
 users_resp = (
     supabase
-    .table("users")
-    .select("id, username")
+    .table("usuarios")
+    .select("id, nombre")
     .in_("id", user_ids)
     .execute()
 )
 
 user_map = {
-    u["id"]: u["username"]
+    u["id"]: u["nombre"]
     for u in users_resp.data
 }
 
