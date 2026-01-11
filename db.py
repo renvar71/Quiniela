@@ -437,10 +437,11 @@ def get_partidos_resueltos():
         supabase
         .table("partidos")
         .select("id_partido, semana")
-        .eq("finished", True)
+        .eq("status", "finished")
         .execute()
     )
     return res.data or []
+
 
 # Ya se calculó?
 def existe_partido_en_puntajes(id_partido):
