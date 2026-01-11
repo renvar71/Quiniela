@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 from supabase_config import supabase
-from db import WEEK_TITLES  # asumo que ya existe
+from db import WEEK_TITLES
 
 # -------------------------
 # SESSION CHECK
@@ -18,7 +18,7 @@ if not user_id:
 st.title("👥 Comparar Predicciones")
 
 # -------------------------
-# SELECT SEMANA (con diccionario)
+# SELECT SEMANA
 # -------------------------
 semanas_resp = (
     supabase
@@ -27,6 +27,10 @@ semanas_resp = (
     .order("semana")
     .execute()
 )
+
+if not semanas_resp.data:
+    st.warning("No hay semanas registradas")
+    st.stop()
 
 semanas = sorted({row["semana"] for row in semanas_resp.data})
 
@@ -51,7 +55,7 @@ semana = next(
 )
 
 # -------------------------
-# SELECT PARTIDO (SOLO FINALIZADOS)
+# SELECT PARTIDO (FINALIZADOS)
 # -------------------------
 partidos_resp = (
     supabase
@@ -62,25 +66,27 @@ partidos_resp = (
     .execute()
 )
 
-partidos_df = pd.DataFrame(partidos_resp.data)
-
-if partidos_df.empty:
+if not partidos_resp.data:
     st.warning("No hay partidos finalizados para esta semana")
     st.stop()
+
+partidos_df = pd.DataFrame(partidos_resp.data)
 
 # -------------------------
 # RESOLVER NOMBRES DE EQUIPOS
 # -------------------------
-equipo_ids = set(
-    partidos_df["equipo_local_id"].tolist() +
-    partidos_df["equipo_visitante_id"].tolist()
+equipo_ids = list(
+    set(
+        partidos_df["equipo_local_id"].tolist()
+        + partidos_df["equipo_visitante_id"].tolist()
+    )
 )
 
 equipos_resp = (
     supabase
     .table("equipos")
     .select("team_id, nombre")
-    .in_("team_id", list(equipo_ids))
+    .in_("team_id", equipo_ids)
     .execute()
 )
 
@@ -111,7 +117,8 @@ if not partido_label:
     st.stop()
 
 partido_id = partidos_df.loc[
-    partidos_df["label"] == partido_label, "id_partido"
+    partidos_df["label"] == partido_label,
+    "id_partido"
 ].iloc[0]
 
 # -------------------------
@@ -132,9 +139,9 @@ if not pred_resp.data:
 pred_df = pd.DataFrame(pred_resp.data)
 
 # -------------------------
-# RESOLVER USERNAMES
+# RESOLVER USUARIOS
 # -------------------------
-user_ids = pred_df["usuario_id"].unique().tolist()
+user_ids = pred_df["usuario_id"].dropna().unique().tolist()
 
 users_resp = (
     supabase
@@ -151,6 +158,9 @@ user_map = {
 
 pred_df["username"] = pred_df["usuario_id"].map(user_map)
 
+# -------------------------
+# FORMATEAR DATAFRAME
+# -------------------------
 df = pred_df.rename(columns={
     "score_local": "Local",
     "score_away": "Visitante",
@@ -160,7 +170,12 @@ df = pred_df.rename(columns={
 # -------------------------
 # FILTER JUGADORES
 # -------------------------
-jugadores_disponibles = df["username"].dropna().unique().tolist()
+jugadores_disponibles = (
+    df["username"]
+    .dropna()
+    .unique()
+    .tolist()
+)
 
 jugadores_seleccionados = st.multiselect(
     "Comparar con jugadores",
@@ -175,7 +190,7 @@ if df.empty:
     st.stop()
 
 # -------------------------
-# ORDENAR (yo primero)
+# ORDENAR (YO PRIMERO)
 # -------------------------
 df["__orden"] = df["usuario_id"] != user_id
 df = df.sort_values("__orden").drop(columns="__orden")
