@@ -104,7 +104,7 @@ partido_id = partidos_df.loc[
 pred_resp = (
     supabase
     .table("predicciones")
-    .select("usuario_id, score_local, score_away, pick")
+    .select("usuario_id, score_local, score_away, pick, line_over_under, extra_question_1, extra_question_2")
     .eq("id_partido", partido_id)
     .execute()
 )
@@ -136,21 +136,25 @@ pred_df["username"] = pred_df["usuario_id"].map(user_map)
 # FORMATEAR DF
 # -------------------------
 df = pred_df.rename(columns={
-    "score_local": "Local",
-    "score_away": "Visitante",
-    "pick": "Ganador"
+    "score_local": "Marcador Local",
+    "score_away": "Marcador Visitante",
+    "pick": "Ganador",
+    "line_over_under": "Linea",
+    "extra_question_1": "Pregunta Extra 1",
+    "extra_question_2": "Pregunta Extra 2"
 })
 
 # -------------------------
 # FILTRO JUGADORES
 # -------------------------
-jugadores = df["username"].dropna().unique().tolist()
+default_user = [user_map[user_id]] if user_id in user_map else []
 
 seleccionados = st.multiselect(
     "Comparar con jugadores",
     jugadores,
-    default=jugadores
+    default=default_user
 )
+
 
 df = df[df["username"].isin(seleccionados)]
 
@@ -169,7 +173,7 @@ def highlight_user(row):
     return [""] * len(row)
 
 styled_df = (
-    df[["usuario_id", "username", "Local", "Visitante", "Ganador"]]
+    df[["usuario_id", "username", "Local", "Visitante", "Ganador", "Linea", "Pregunta Extra 1", "Pregunta Extra 2"]]
     .style
     .apply(highlight_user, axis=1)
     .hide(axis="columns", subset=["usuario_id"])
