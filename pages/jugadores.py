@@ -175,7 +175,7 @@ def highlight_user(row):
     return [""] * len(row)
 
 styled_df = (
-    df[["usuario_id", "username", "Local", "Visitante", "Ganador", "Linea", "Pregunta Extra 1", "Pregunta Extra 2"]]
+    df[["usuario_id", "username", "Marcador Local", "Marcador Visitante", "Ganador", "Linea", "Pregunta Extra 1", "Pregunta Extra 2"]]
     .style
     .apply(highlight_user, axis=1)
     .hide(axis="columns", subset=["usuario_id"])
