@@ -147,6 +147,8 @@ df = pred_df.rename(columns={
 # -------------------------
 # FILTRO JUGADORES
 # -------------------------
+jugadores = df["username"].dropna().unique().tolist()
+
 default_user = [user_map[user_id]] if user_id in user_map else []
 
 seleccionados = st.multiselect(
