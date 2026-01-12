@@ -143,7 +143,27 @@ futuros = [p for p in partidos_semana_max if p.get("status") == "scheduled"]
 data_futuros = []
 for p in futuros:
     fecha_db = p.get("fecha")
-    estado_pred = get_prediccion_status(USER_ID, p["id_partido"], fecha_db)
+    estado_pred_raw = get_prediccion_status(USER_ID, p["id_partido"], fecha_db)
+    # En main.py predomina "Registrada" si existe predicción
+    if estado_pred_raw == "🔴 Expirada":
+        supabase = get_supabase()
+        existe_pred = (
+            supabase
+            .table("predicciones")
+            .select("id")
+            .eq("usuario_id", USER_ID)
+            .eq("id_partido", p["id_partido"])
+            .limit(1)
+            .execute()
+        )
+    
+        if existe_pred.data:
+            estado_pred = "🟢 Registrada"
+        else:
+            estado_pred = "🔴 Expirada"
+    else:
+        estado_pred = estado_pred_raw
+
     fecha_fmt = "Por definir"
     if fecha_db:
         try:
