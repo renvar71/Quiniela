@@ -63,19 +63,22 @@ if not partidos_resp.data:
 
 partidos_df = pd.DataFrame(partidos_resp.data)
 
+
 # -------------------------
-# FETCH PUNTAJE
+# FETCH PUNTAJES
 # -------------------------
-puntaje_resp = (
+puntajes_resp = (
     supabase
-    .table("puntaje")
+    .table("puntajes")
     .select("usuario_id, partido_id, puntos")
-    .eq("id_partido", partido_id)
+    .eq("partido_id", partido_id)
     .execute()
 )
 
-puntaje_df = pd.DataFrame(puntaje_resp.data) if puntaje_resp.data else pd.DataFrame(
-    columns=["usuario_id", "partido_id", "puntos"]
+puntajes_df = (
+    pd.DataFrame(puntajes_resp.data)
+    if puntajes_resp.data
+    else pd.DataFrame(columns=["usuario_id", "partido_id", "puntos"])
 )
 
 # -------------------------
@@ -131,13 +134,12 @@ if not pred_resp.data:
 pred_df = pd.DataFrame(pred_resp.data)
 
 pred_df = pred_df.merge(
-    puntaje_df[["usuario_id", "puntos"]],
+    puntajes_df[["usuario_id", "puntos"]],
     on="usuario_id",
     how="left"
 )
 
-pred_df["puntos"] = pred_df["puntos"].fillna(0)
-
+pred_df["puntos"] = pred_df["puntos"].fillna(0).astype(int)
 
 # -------------------------
 # RESOLVER USUARIOS
@@ -205,13 +207,13 @@ def highlight_user(row):
 styled_df = (
     df[[
         "username",
-        "Puntos",
         "Marcador Local",
         "Marcador Visitante",
         "Ganador",
         "Linea",
         "Pregunta Extra 1",
-        "Pregunta Extra 2"
+        "Pregunta Extra 2",
+        "Puntos"
     ]]
     .style
     .apply(
