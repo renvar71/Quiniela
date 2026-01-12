@@ -64,6 +64,21 @@ if not partidos_resp.data:
 partidos_df = pd.DataFrame(partidos_resp.data)
 
 # -------------------------
+# FETCH PUNTAJE
+# -------------------------
+puntaje_resp = (
+    supabase
+    .table("puntaje")
+    .select("usuario_id, id_partido, puntos")
+    .eq("id_partido", partido_id)
+    .execute()
+)
+
+puntaje_df = pd.DataFrame(puntaje_resp.data) if puntaje_resp.data else pd.DataFrame(
+    columns=["usuario_id", "id_partido", "puntos"]
+)
+
+# -------------------------
 # RESOLVER EQUIPOS
 # -------------------------
 equipo_ids = list(set(
@@ -115,6 +130,15 @@ if not pred_resp.data:
 
 pred_df = pd.DataFrame(pred_resp.data)
 
+pred_df = pred_df.merge(
+    puntaje_df[["usuario_id", "puntos"]],
+    on="usuario_id",
+    how="left"
+)
+
+pred_df["puntos"] = pred_df["puntos"].fillna(0)
+
+
 # -------------------------
 # RESOLVER USUARIOS
 # -------------------------
@@ -141,7 +165,8 @@ df = pred_df.rename(columns={
     "pick": "Ganador",
     "line_over_under": "Linea",
     "extra_question_1": "Pregunta Extra 1",
-    "extra_question_2": "Pregunta Extra 2"
+    "extra_question_2": "Pregunta Extra 2",
+    "puntos": "Puntos"
 })
 
 # -------------------------
@@ -160,11 +185,14 @@ seleccionados = st.multiselect(
 
 df = df[df["username"].isin(seleccionados)]
 
+
 # -------------------------
-# ORDEN (YO PRIMERO)
+# ORDEN (PUNTOS DESC, YO DESTACADO)
 # -------------------------
-df["__orden"] = df["usuario_id"] != user_id
-df = df.sort_values("__orden").drop(columns="__orden")
+df = df.sort_values(
+    by=["Puntos"],
+    ascending=False
+)
 
 # -------------------------
 # STYLER (FIX DEFINITIVO)
@@ -177,6 +205,7 @@ def highlight_user(row):
 styled_df = (
     df[[
         "username",
+        "Puntos",
         "Marcador Local",
         "Marcador Visitante",
         "Ganador",
