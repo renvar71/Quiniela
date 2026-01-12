@@ -209,18 +209,33 @@ df = df.sort_values("_orden", ascending=False).drop(columns="_orden")
 def style_row(row):
     styles = [""] * len(row)
 
-    col_map = {
-        "Ganador": ganador_real,
-        "Linea": resultados.get("o_u_resultado"),
-        "Pregunta Extra 1": resultados.get("pregunta1_resultado"),
-        "Pregunta Extra 2": resultados.get("pregunta2_resultado"),
-    }
+    # 🎯 Marcador exacto
+    marcador_exacto = (
+        partido["score_local"] is not None
+        and partido["score_away"] is not None
+        and row["Marcador Local"] == partido["score_local"]
+        and row["Marcador Visitante"] == partido["score_away"]
+    )
 
     for i, col in enumerate(row.index):
+        # 🥇 Dorado para marcador exacto
+        if marcador_exacto and col in ["Marcador Local", "Marcador Visitante"]:
+            styles[i] = "background-color: #f1c40f; color: black"
+            continue
+
+        # ✅ Respuestas correctas (verde)
+        col_map = {
+            "Ganador": ganador_real,
+            "Linea": resultados.get("o_u_resultado"),
+            "Pregunta Extra 1": resultados.get("pregunta1_resultado"),
+            "Pregunta Extra 2": resultados.get("pregunta2_resultado"),
+        }
+
         if col in col_map and col_map[col] is not None:
             if row[col] == col_map[col]:
                 styles[i] = "background-color: #2ecc71; color: black"
 
+    # 👤 Usuario actual (azul si no tiene otro color)
     if df.loc[row.name, "usuario_id"] == user_id:
         styles = [
             s + "; background-color: #1f77b4; color: white"
@@ -230,6 +245,7 @@ def style_row(row):
         ]
 
     return styles
+
 
 styled_df = (
     df[[
