@@ -202,6 +202,9 @@ df = df[df["username"].isin(seleccionados)]
 # -------------------------
 df["_orden"] = df["Puntos"].apply(lambda x: -1 if x == "En juego" else x)
 df = df.sort_values("_orden", ascending=False).drop(columns="_orden")
+df = df.rename(columns={
+    "username": "Nombre"
+})
 
 # -------------------------
 # STYLER
@@ -249,7 +252,7 @@ def style_row(row):
 
 styled_df = (
     df[[
-        "username",
+        "Nombre",
         "Marcador Local",
         "Marcador Visitante",
         "Ganador",
