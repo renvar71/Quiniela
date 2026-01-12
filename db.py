@@ -159,36 +159,6 @@ def get_partidos(semana=None):
 # PREDICCIONES
 # -------------------------
 
-
-# def save_prediccion(
-#     usuario_id,
-#     id_partido,
-#     semana,
-#     fecha_partido,
-#     pick,
-#     score_local=None,
-#     score_away=None,
-#     line_over_under=None,
-#     extra_question_1=None,
-#     extra_question_2=None
-# ):
-#     supabase = get_supabase()
-#     supabase.table("predicciones").upsert(
-#         {
-#             "usuario_id": usuario_id,
-#             "id_partido": id_partido,
-#             "semana": semana,
-#             "pick": pick,
-#             "score_local": score_local,
-#             "score_away": score_away,
-#             "line_over_under": line_over_under,
-#             "extra_question_1": extra_question_1,
-#             "extra_question_2": extra_question_2,
-#             "fecha_partido": fecha_partido
-#         },
-#         on_conflict="usuario_id,id_partido"
-#     ).execute()
-
 # CAMBIO MÍNIMO A SAVE_PREDICCION
 def save_prediccion(
     usuario_id,
@@ -286,17 +256,6 @@ def get_prediccion_status(usuario_id, id_partido, fecha_partido):
     # FECHA DESDE DB
     # -------------------------
 
-    # if res.data:
-    #     db_fecha = res.data[0].get("fecha_partido")
-    #     if isinstance(db_fecha, str):
-    #         try:
-    #             partido_dt = datetime.fromisoformat(db_fecha.replace("Z", ""))
-    #             if now >= partido_dt - timedelta(minutes=1):
-    #                 return "🔴 Expirada"
-    #         except Exception:
-    #             pass
-    #     return "🟢 Registrada"
-
     if res.data:
         db_fecha = res.data[0].get("fecha_partido")
         if isinstance(db_fecha, str):
@@ -311,27 +270,6 @@ def get_prediccion_status(usuario_id, id_partido, fecha_partido):
                 pass
         return "🟢 Registrada"
 
-    # -------------------------
-    # FECHA DESDE CONTEXTO
-    # -------------------------
-    # if isinstance(fecha_partido, (datetime, date)):
-    #     partido_dt = (
-    #         fecha_partido
-    #         if isinstance(fecha_partido, datetime)
-    #         else datetime.combine(fecha_partido, datetime.min.time())
-    #     )
-    #     if now >= partido_dt - timedelta(minutes=1):
-    #         return "🔴 Expirada"
-
-    # if isinstance(fecha_partido, str):
-    #     try:
-    #         partido_dt = datetime.fromisoformat(fecha_partido.replace("Z", ""))
-    #         if now >= partido_dt - timedelta(minutes=1):
-    #             return "🔴 Expirada"
-    #     except Exception:
-    #         pass
-
-    # return "🟡 Pendiente"
     # ---------- FECHA DESDE PARTIDOS ----------
     if isinstance(fecha_partido, str):
         try:
