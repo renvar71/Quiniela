@@ -4,6 +4,7 @@ import pandas as pd
 from supabase_config import supabase
 from db import WEEK_TITLES
 from datetime import datetime, timezone
+from logic import calcular_ganador_nombre
 
 # -------------------------
 # SESSION CHECK
@@ -30,7 +31,6 @@ semanas_resp = (
 )
 
 semanas = sorted({r["semana"] for r in semanas_resp.data})
-
 semana_labels = {s: WEEK_TITLES.get(s, f"Semana {s}") for s in semanas}
 
 semana_label = st.selectbox("Semana", options=[None] + list(semana_labels.values()))
@@ -45,7 +45,9 @@ semana = next(k for k, v in semana_labels.items() if v == semana_label)
 partidos_resp = (
     supabase
     .table("partidos")
-    .select("id_partido, equipo_local_id, equipo_visitante_id, fecha")
+    .select(
+        "id_partido, equipo_local_id, equipo_visitante_id, fecha, score_local, score_away"
+    )
     .eq("semana", semana)
     .execute()
 )
@@ -87,9 +89,20 @@ partido_label = st.selectbox("Partido", options=[None] + partidos_df["label"].to
 if not partido_label:
     st.stop()
 
-partido_id = partidos_df.loc[
-    partidos_df["label"] == partido_label, "id_partido"
-].iloc[0]
+partido_row = partidos_df.loc[partidos_df["label"] == partido_label].iloc[0]
+partido_id = partido_row["id_partido"]
+
+# -------------------------
+# GANADOR REAL (DESDE PARTIDOS)
+# -------------------------
+partido = {
+    "score_local": partido_row["score_local"],
+    "score_away": partido_row["score_away"],
+    "equipo_local_id": partido_row["equipo_local_id"],
+    "equipo_visitante_id": partido_row["equipo_visitante_id"],
+}
+
+ganador_real = calcular_ganador_nombre(partido)
 
 # -------------------------
 # FETCH RESULTADOS ADMIN
@@ -98,7 +111,7 @@ res_admin = (
     supabase
     .table("resultados_admin")
     .select(
-        "equipo_local, o_u_resultado, pregunta1_resultado, pregunta2_resultado"
+        "o_u_resultado, pregunta1_resultado, pregunta2_resultado"
     )
     .eq("id_partido", partido_id)
     .execute()
@@ -191,13 +204,13 @@ df["_orden"] = df["Puntos"].apply(lambda x: -1 if x == "En juego" else x)
 df = df.sort_values("_orden", ascending=False).drop(columns="_orden")
 
 # -------------------------
-# STYLER (USUARIO + RESPUESTAS CORRECTAS)
+# STYLER
 # -------------------------
 def style_row(row):
     styles = [""] * len(row)
 
     col_map = {
-        "Ganador": resultados.get("equipo_local"),
+        "Ganador": ganador_real,
         "Linea": resultados.get("o_u_resultado"),
         "Pregunta Extra 1": resultados.get("pregunta1_resultado"),
         "Pregunta Extra 2": resultados.get("pregunta2_resultado"),
