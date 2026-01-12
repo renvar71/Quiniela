@@ -253,8 +253,8 @@ def style_row(row):
 styled_df = (
     df[[
         "Nombre",
-        "Marcador Local",
-        "Marcador Visitante",
+        "Local",
+        "Visitante",
         "Ganador",
         "Linea",
         "Pregunta Extra 1",
