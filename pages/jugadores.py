@@ -175,10 +175,22 @@ def highlight_user(row):
     return [""] * len(row)
 
 styled_df = (
-    df[["usuario_id", "username", "Marcador Local", "Marcador Visitante", "Ganador", "Linea", "Pregunta Extra 1", "Pregunta Extra 2"]]
+    df[[
+        "username",
+        "Marcador Local",
+        "Marcador Visitante",
+        "Ganador",
+        "Linea",
+        "Pregunta Extra 1",
+        "Pregunta Extra 2"
+    ]]
     .style
-    .apply(highlight_user, axis=1)
-    .hide(axis="columns", subset=["usuario_id"])
+    .apply(
+        lambda row: ["background-color: #1f77b4; color: white"] * len(row)
+        if df.loc[row.name, "usuario_id"] == user_id
+        else ["" for _ in row],
+        axis=1
+    )
 )
 
 st.caption(f"Comparando {len(df)} predicciones")
