@@ -69,13 +69,13 @@ partidos_df = pd.DataFrame(partidos_resp.data)
 puntaje_resp = (
     supabase
     .table("puntaje")
-    .select("usuario_id, id_partido, puntos")
+    .select("usuario_id, partido_id, puntos")
     .eq("id_partido", partido_id)
     .execute()
 )
 
 puntaje_df = pd.DataFrame(puntaje_resp.data) if puntaje_resp.data else pd.DataFrame(
-    columns=["usuario_id", "id_partido", "puntos"]
+    columns=["usuario_id", "partido_id", "puntos"]
 )
 
 # -------------------------
