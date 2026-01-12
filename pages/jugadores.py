@@ -51,9 +51,9 @@ semana = next(k for k, v in semana_labels.items() if v == semana_label)
 partidos_resp = (
     supabase
     .table("partidos")
-    .select("id_partido, equipo_local_id, equipo_visitante_id, status")
+    .select("id_partido, equipo_local_id, equipo_visitante_id, confirmed_result")
     .eq("semana", semana)
-    .eq("status", "finished")
+    .eq("confirmed_result", True)
     .execute()
 )
 
