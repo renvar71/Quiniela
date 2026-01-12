@@ -63,24 +63,6 @@ if not partidos_resp.data:
 
 partidos_df = pd.DataFrame(partidos_resp.data)
 
-
-# -------------------------
-# FETCH PUNTAJES
-# -------------------------
-puntajes_resp = (
-    supabase
-    .table("puntajes")
-    .select("usuario_id, partido_id, puntos")
-    .eq("partido_id", partido_id)
-    .execute()
-)
-
-puntajes_df = (
-    pd.DataFrame(puntajes_resp.data)
-    if puntajes_resp.data
-    else pd.DataFrame(columns=["usuario_id", "partido_id", "puntos"])
-)
-
 # -------------------------
 # RESOLVER EQUIPOS
 # -------------------------
@@ -115,6 +97,25 @@ if not partido_label:
 partido_id = partidos_df.loc[
     partidos_df["label"] == partido_label, "id_partido"
 ].iloc[0]
+
+
+# -------------------------
+# FETCH PUNTAJES
+# -------------------------
+puntajes_resp = (
+    supabase
+    .table("puntajes")
+    .select("usuario_id, partido_id, puntos")
+    .eq("partido_id", partido_id)
+    .execute()
+)
+
+puntajes_df = (
+    pd.DataFrame(puntajes_resp.data)
+    if puntajes_resp.data
+    else pd.DataFrame(columns=["usuario_id", "partido_id", "puntos"])
+)
+
 
 # -------------------------
 # FETCH PREDICCIONES
