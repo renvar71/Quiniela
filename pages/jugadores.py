@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 from supabase_config import supabase
 from db import WEEK_TITLES
+from datetime import datetime, timezone
 
 # -------------------------
 # SESSION CHECK
@@ -46,22 +47,33 @@ if not semana_label:
 semana = next(k for k, v in semana_labels.items() if v == semana_label)
 
 # -------------------------
-# SELECT PARTIDO (FINALIZADOS)
+# SELECT PARTIDO (INICIADOS O FINALIZADOS)
 # -------------------------
 partidos_resp = (
     supabase
     .table("partidos")
-    .select("id_partido, equipo_local_id, equipo_visitante_id, confirmed_result")
+    .select("id_partido, equipo_local_id, equipo_visitante_id, fecha")
     .eq("semana", semana)
-    .eq("confirmed_result", True)
     .execute()
 )
 
 if not partidos_resp.data:
-    st.warning("No hay partidos finalizados")
+    st.warning("No hay partidos disponibles")
     st.stop()
 
 partidos_df = pd.DataFrame(partidos_resp.data)
+
+# -------------------------
+# FILTRAR SOLO PARTIDOS YA INICIADOS
+# -------------------------
+now = datetime.now(timezone.utc)
+
+partidos_df["fecha"] = pd.to_datetime(partidos_df["fecha"], utc=True)
+partidos_df = partidos_df[partidos_df["fecha"] <= now]
+
+if partidos_df.empty:
+    st.warning("Aún no hay partidos iniciados para esta semana")
+    st.stop()
 
 # -------------------------
 # RESOLVER EQUIPOS
@@ -98,7 +110,6 @@ partido_id = partidos_df.loc[
     partidos_df["label"] == partido_label, "id_partido"
 ].iloc[0]
 
-
 # -------------------------
 # FETCH PUNTAJES
 # -------------------------
@@ -116,14 +127,15 @@ puntajes_df = (
     else pd.DataFrame(columns=["usuario_id", "partido_id", "puntos"])
 )
 
-
 # -------------------------
 # FETCH PREDICCIONES
 # -------------------------
 pred_resp = (
     supabase
     .table("predicciones")
-    .select("usuario_id, score_local, score_away, pick, line_over_under, extra_question_1, extra_question_2")
+    .select(
+        "usuario_id, score_local, score_away, pick, line_over_under, extra_question_1, extra_question_2"
+    )
     .eq("id_partido", partido_id)
     .execute()
 )
@@ -140,7 +152,12 @@ pred_df = pred_df.merge(
     how="left"
 )
 
-pred_df["puntos"] = pred_df["puntos"].fillna(0).astype(int)
+# -------------------------
+# PUNTOS: EN JUEGO vs FINAL
+# -------------------------
+pred_df["Puntos"] = pred_df["puntos"].apply(
+    lambda x: "En juego" if pd.isna(x) else int(x)
+)
 
 # -------------------------
 # RESOLVER USUARIOS
@@ -168,15 +185,13 @@ df = pred_df.rename(columns={
     "pick": "Ganador",
     "line_over_under": "Linea",
     "extra_question_1": "Pregunta Extra 1",
-    "extra_question_2": "Pregunta Extra 2",
-    "puntos": "Puntos"
+    "extra_question_2": "Pregunta Extra 2"
 })
 
 # -------------------------
 # FILTRO JUGADORES
 # -------------------------
 jugadores = df["username"].dropna().unique().tolist()
-
 default_user = [user_map[user_id]] if user_id in user_map else []
 
 seleccionados = st.multiselect(
@@ -185,26 +200,23 @@ seleccionados = st.multiselect(
     default=default_user
 )
 
-
 df = df[df["username"].isin(seleccionados)]
 
-
 # -------------------------
-# ORDEN (PUNTOS DESC, YO DESTACADO)
+# ORDEN (PUNTOS DESC, EN JUEGO AL FINAL)
 # -------------------------
-df = df.sort_values(
-    by=["Puntos"],
-    ascending=False
+df["_orden_puntos"] = df["Puntos"].apply(
+    lambda x: -1 if x == "En juego" else x
 )
 
-# -------------------------
-# STYLER (FIX DEFINITIVO)
-# -------------------------
-def highlight_user(row):
-    if row["usuario_id"] == user_id:
-        return ["background-color: #1f77b4; color: white"] * len(row)
-    return [""] * len(row)
+df = df.sort_values(
+    by="_orden_puntos",
+    ascending=False
+).drop(columns="_orden_puntos")
 
+# -------------------------
+# STYLER (USUARIO ACTUAL)
+# -------------------------
 styled_df = (
     df[[
         "username",
