@@ -138,7 +138,7 @@ st.subheader(f"{semana_nombre}")
 # ======================================================
 # PARTIDOS FUTUROS
 # ======================================================
-futuros = [p for p in partidos_semana_max if p.get("status") == "scheduled"]
+futuros = [p for p in partidos_semana_max if not p.get("confirmed_result")]
 
 data_futuros = []
 for p in futuros:
@@ -192,7 +192,7 @@ else:
 # ======================================================
 # PARTIDOS PASADOS
 # ======================================================
-completados = [p for p in partidos_semana_max if p.get("status") == "finished"]
+completados = [p for p in partidos_semana_max if p.get("confirmed_result")]
 
 data_completados = []
 for p in completados:
