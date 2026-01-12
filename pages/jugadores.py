@@ -263,4 +263,20 @@ styled_df = (
 )
 
 st.caption(f"Comparando {len(df)} predicciones")
+st.markdown(
+    """
+    <div style="display:flex; gap:20px; margin-bottom:10px;">
+        <div>
+            <span style="display:inline-block; width:16px; height:16px; background-color:#f1c40f; margin-right:6px;"></span>
+            <strong>Marcador Exacto</strong>
+        </div>
+        <div>
+            <span style="display:inline-block; width:16px; height:16px; background-color:#2ecc71; margin-right:6px;"></span>
+            <strong>Pick correcto</strong>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.dataframe(styled_df, use_container_width=True)
