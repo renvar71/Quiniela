@@ -175,8 +175,8 @@ pred_df["username"] = pred_df["usuario_id"].map(user_map)
 # FORMATEAR DF
 # -------------------------
 df = pred_df.rename(columns={
-    "score_local": "Marcador Local",
-    "score_away": "Marcador Visitante",
+    "score_local": "Local",
+    "score_away": "Visitante",
     "pick": "Ganador",
     "line_over_under": "Linea",
     "extra_question_1": "Pregunta Extra 1",
