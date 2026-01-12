@@ -36,8 +36,8 @@ def get_resultado_partido(id_partido):
         supabase
         .table("partidos")
         .select(
-            "score_local, score_away, status, equipo_local_id, equipo_visitante_id"
-        )
+            "score_local, score_away, status, equipo_local_id, equipo_visitante_id, confirmed_result"
+        ) # Cambio de semáforo
         .eq("id_partido", id_partido)
         .limit(1)
         .execute()
@@ -48,7 +48,7 @@ def get_resultado_partido(id_partido):
 
     p = res.data[0]
 
-    if p["status"] != "finished":
+    if not p.get("confirmed_result", False): # Validamos
         return None
 
     if p["score_local"] is None or p["score_away"] is None:
