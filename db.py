@@ -437,7 +437,7 @@ def get_partidos_resueltos():
         supabase
         .table("partidos")
         .select("id_partido, semana")
-        .eq("status", "finished")
+        .eq("confirmed_result", True)
         .execute()
     )
     return res.data or []
