@@ -194,7 +194,7 @@ def save_prediccion(
 
     # 3️⃣ Payload base
     payload = {
-        "usuaio_id": usuario_id,
+        "usuario_id": usuario_id,
         "id_partido": id_partido,
         "semana": semana,
         "pick": pick,
