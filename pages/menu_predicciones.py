@@ -1,5 +1,16 @@
+# menu_predicciones.py
 import streamlit as st
-from db import WEEK_TITLES, get_supabase, get_prediccion_by_user_optimized, get_prediccion_status
+from db import (
+    WEEK_TITLES,
+    get_supabase,
+    get_prediccion_by_user_optimized,
+    get_prediccion_status
+)
+
+# -------------------------
+# CONFIG MANUAL
+# -------------------------
+SEMANA_ACTIVA = 125
 
 # -------------------------
 # SESSION CHECK
@@ -59,7 +70,6 @@ if "partidos_cache" not in st.session_state:
             id_partido,
             semana,
             fecha,
-            updated_at,
             local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
             visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, badge_url),
             home_badge_url,
@@ -74,25 +84,12 @@ if "partidos_cache" not in st.session_state:
 partidos = st.session_state.partidos_cache
 
 # -------------------------
-# FILTRAR POR UPDATED_AT MÁS RECIENTE
+# FILTRAR POR SEMANA MANUAL
 # -------------------------
-updated_values = []
-
-for p in partidos:
-    val = p.get("updated_at")
-    if val:
-        updated_values.append(val)
-
-if updated_values:
-    max_updated_at = max(updated_values)
-    partidos = [
-        p for p in partidos
-        if p.get("updated_at") == max_updated_at
-    ]
-else:
-    max_updated_at = None
-
-
+partidos = [
+    p for p in partidos
+    if p.get("semana") == SEMANA_ACTIVA
+]
 
 # -------------------------
 # SEPARAR PENDIENTES / COMPLETADOS
@@ -126,7 +123,7 @@ for p in partidos:
         "status": status
     }
 
-    # Regla UX:
+    # UX RULE:
     # - Si existe predicción → Completados
     # - Si NO existe → Pendientes (aunque esté expirada)
     if prediccion:
@@ -134,12 +131,11 @@ for p in partidos:
     else:
         pendientes.append(item)
 
-
 # -------------------------
 # UI
 # -------------------------
-st.title("📋 Partidos (última actualización)")
-
+semana_nombre = WEEK_TITLES.get(SEMANA_ACTIVA, f"Semana {SEMANA_ACTIVA}")
+st.title(f"📋 Partidos - {semana_nombre}")
 
 col_pend, col_comp = st.columns(2)
 
@@ -202,4 +198,3 @@ with col_comp:
 
         if btn and not expirada:
             _set_context_and_go(p)
-
