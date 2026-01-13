@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 import random
-from db import save_prediccion, WEEK_TITLES, get_resultado_admin
+from db import save_prediccion, WEEK_TITLES, get_resultado_admin, WEEK_RULES
 
 # -------------------------
 # SESSION CHECK
@@ -34,23 +34,46 @@ local = st.session_state.local
 visitante = st.session_state.visitante
 fecha_partido = st.session_state.fecha_partido
 
+# -------------------------
+# WEEK RULES
+# -------------------------
+rules = WEEK_RULES.get(semana, {})
+extra_rules = rules.get("extra_questions", [])
+num_extras = len(extra_rules)
+
 edit_mode = st.session_state.get("edit_mode", False)
 pred = st.session_state.get("prediccion_actual")
 
 # -------------------------
 # PREGUNTAS EXTRA
 # -------------------------
-if (
+# if (
+#     "preguntas_extra" not in st.session_state
+#     or st.session_state.get("preguntas_id_partido") != id_partido
+# ):
+#     df = pd.read_csv("preguntas.csv")
+#     preguntas = df["pregunta"].dropna().tolist()
+#     random.seed(id_partido)
+#     st.session_state.preguntas_extra = random.sample(preguntas, 2)
+#     st.session_state.preguntas_id_partido = id_partido
+
+# pregunta_1, pregunta_2 = st.session_state.preguntas_extra
+
+
+# -------------------------
+# PREGUNTAS EXTRA (DINÁMICAS)
+# -------------------------
+
+if num_extras > 0 and (
     "preguntas_extra" not in st.session_state
     or st.session_state.get("preguntas_id_partido") != id_partido
 ):
     df = pd.read_csv("preguntas.csv")
     preguntas = df["pregunta"].dropna().tolist()
     random.seed(id_partido)
-    st.session_state.preguntas_extra = random.sample(preguntas, 2)
+    st.session_state.preguntas_extra = random.sample(preguntas, num_extras)
     st.session_state.preguntas_id_partido = id_partido
 
-pregunta_1, pregunta_2 = st.session_state.preguntas_extra
 
 if st.button("🔙 Volver"):
     st.switch_page("pages/menu_predicciones.py")
@@ -133,25 +156,46 @@ with st.form("form_prediccion"):
     )
 
     # PREGUNTAS EXTRA
-    pregunta_1, pregunta_2 = st.session_state.preguntas_extra
-    st.markdown("**Preguntas extra:**")
+    # pregunta_1, pregunta_2 = st.session_state.preguntas_extra
+    # st.markdown("**Preguntas extra:**")
 
-    # PREGUNTAS EXTRA
-    extra_1 = st.radio(
-        pregunta_1,
-        [local, visitante],
-        index=[local, visitante].index(pred["extra_question_1"]) if edit_mode and pred else 0,
-        horizontal=True,
-        key="extra_1"
-    )
+    # # PREGUNTAS EXTRA
+    # extra_1 = st.radio(
+    #     pregunta_1,
+    #     [local, visitante],
+    #     index=[local, visitante].index(pred["extra_question_1"]) if edit_mode and pred else 0,
+    #     horizontal=True,
+    #     key="extra_1"
+    # )
 
-    extra_2 = st.radio(
-        pregunta_2,
-        [local, visitante],
-        index=[local, visitante].index(pred["extra_question_2"]) if edit_mode and pred else 0,
-        horizontal=True,
-        key="extra_2"
-    )
+    # extra_2 = st.radio(
+    #     pregunta_2,
+    #     [local, visitante],
+    #     index=[local, visitante].index(pred["extra_question_2"]) if edit_mode and pred else 0,
+    #     horizontal=True,
+    #     key="extra_2"
+    # )
+    # -------------------------
+    # PREGUNTAS EXTRA (UI DINÁMICA)
+    # -------------------------
+    extra_answers = {}
+
+    if num_extras > 0:
+        st.markdown("**Preguntas extra:**")
+
+        for i, (pred_field, _) in enumerate(extra_rules):
+            pregunta = st.session_state.preguntas_extra[i]
+            
+            value = pred.get(pred_field) if edit_mode and pred else None
+            
+            extra_answers[pred_field] = st.radio(
+                pregunta,
+                [local, visitante],
+                index=[local, visitante].index(value) if value in [local, visitante] else 0,
+                horizontal=True,
+                key=pred_field
+            )
+
 
     submit = st.form_submit_button(
         "Actualizar Predicción" if edit_mode else "Guardar Predicción"
@@ -167,6 +211,18 @@ if submit:
         else "Empate"
     )
 
+    # save_prediccion(
+    #     usuario_id=user_id,
+    #     id_partido=id_partido,
+    #     semana=semana,
+    #     fecha_partido=fecha_partido,
+    #     pick=ganador,
+    #     score_local=score_local,
+    #     score_away=score_away,
+    #     line_over_under=line,
+    #     extra_question_1=extra_1,
+    #     extra_question_2=extra_2
+    # )
     save_prediccion(
         usuario_id=user_id,
         id_partido=id_partido,
@@ -176,8 +232,7 @@ if submit:
         score_local=score_local,
         score_away=score_away,
         line_over_under=line,
-        extra_question_1=extra_1,
-        extra_question_2=extra_2
+        extra_answers=extra_answers
     )
 
     st.success("✅ Predicción actualizada" if edit_mode else "✅ Predicción guardada")
