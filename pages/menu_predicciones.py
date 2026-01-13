@@ -76,14 +76,22 @@ partidos = st.session_state.partidos_cache
 # -------------------------
 # FILTRAR POR UPDATED_AT MÁS RECIENTE
 # -------------------------
-if partidos:
-    max_updated_at = max(p.get("updated_at") for p in partidos if p.get("updated_at"))
+updated_values = []
+
+for p in partidos:
+    val = p.get("updated_at")
+    if val:
+        updated_values.append(val)
+
+if updated_values:
+    max_updated_at = max(updated_values)
     partidos = [
         p for p in partidos
         if p.get("updated_at") == max_updated_at
     ]
 else:
     max_updated_at = None
+
 
 
 # -------------------------
