@@ -169,8 +169,9 @@ def save_prediccion(
     score_local=None,
     score_away=None,
     line_over_under=None,
-    extra_question_1=None,
-    extra_question_2=None
+    extra_answers=None
+    # extra_question_1=None,
+    # extra_question_2=None
 ):
     supabase = get_supabase()
 
@@ -191,23 +192,26 @@ def save_prediccion(
     if not fecha_real:
         raise RuntimeError(f"No se encontró fecha para partido {id_partido}")
 
-    # 3️⃣ Guardar predicción usando SOLO la fecha real
+    # 3️⃣ Payload base
+    payload = {
+        "usuaio_id": usuario_id,
+        "id_partido": id_partido,
+        "semana": semana,
+        "pick": pick,
+        "score_local": score_local,
+        "score_away": score_away,
+        "line_over_under": line_over_under,
+        "fecha_partido": fecha_real,
+    }
+    # Extras dinámicos según la semana
+    rules = WEEK_RULES.get(semana, {})
+    for pred_field, _ in rules.get("extra_questions", []):
+        payload[pred_field] = (extra_answers or {}).get(pred_field)
+    # Guardar
     supabase.table("predicciones").upsert(
-        {
-            "usuario_id": usuario_id,
-            "id_partido": id_partido,
-            "semana": semana,
-            "pick": pick,
-            "score_local": score_local,
-            "score_away": score_away,
-            "line_over_under": line_over_under,
-            "extra_question_1": extra_question_1,
-            "extra_question_2": extra_question_2,
-            "fecha_partido": fecha_real
-        },
+        payload,
         on_conflict="usuario_id,id_partido"
     ).execute()
-
 
 # QUITAR DOBLE UPSERT
 def has_prediccion(usuario_id, id_partido):
