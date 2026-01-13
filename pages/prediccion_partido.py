@@ -145,7 +145,7 @@ with st.form("form_prediccion"):
         linea = resultado[0]["linea"]
     else:
         st.write("No se encontró información del partido")
-        linea = "N/A"  # para evitar error si no hay valor
+        linea = "Linea no publicada"  # para evitar error si no hay valor
     
     line = st.radio(
         f"Over / Under total puntos ({linea})",
