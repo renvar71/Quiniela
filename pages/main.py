@@ -1,17 +1,19 @@
-#main.py
+# main.py
 import streamlit as st
 from datetime import datetime, date
 import pandas as pd
 import requests
-from db import get_prediccion_status, WEEK_TITLES, get_partidos, get_supabase
+from db import get_prediccion_status, WEEK_TITLES, get_supabase
 from zoneinfo import ZoneInfo 
 
 # -------------------------
 # CONFIG
 # -------------------------
 LEAGUE_ID = "4391"  # NFL
-API_KEY = 609380  # Reemplaza con tu API Key
+API_KEY = 609380
 API_URL = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookupleague.php"
+
+SEMANA_ACTIVA = 125
 
 st.set_page_config(page_title="🏈 QUINIELA NFL 🏈", layout="wide")
 
@@ -68,6 +70,8 @@ def cargar_partidos():
         ("next", f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventsnextleague.php?id={LEAGUE_ID}")
     ]
 
+    supabase = get_supabase()
+
     for tipo, url in endpoints:
         try:
             r = requests.get(url, timeout=10)
@@ -80,8 +84,7 @@ def cargar_partidos():
                     fecha_iso = f"{e['dateEvent']}T{e['strTime']}"
 
                 status = "finished" if tipo == "past" else "scheduled"
-                # Cambio 3
-                supabase = get_supabase()
+
                 supabase.table("partidos").upsert({
                     "id_partido": e["idEvent"],
                     "semana": int(e.get("intRound") or 0),
@@ -94,8 +97,10 @@ def cargar_partidos():
                     "score_away": e.get("intAwayScore"),
                     "status": status
                 }, on_conflict="id_partido").execute()
+
         except Exception as e:
             st.error(f"Error cargando partidos {tipo}: {e}")
+
 # PATCH CONTRA RERUNS
 if "partidos_sync" not in st.session_state:
     cargar_partidos()
@@ -104,49 +109,36 @@ if "partidos_sync" not in st.session_state:
 # ======================================================
 # OBTENER PARTIDOS
 # ======================================================
-# Cambio 2
 supabase = get_supabase()
 res = supabase.table("partidos").select("*").execute()
 partidos = res.data or []
+
 if not partidos:
     st.info("No hay partidos disponibles")
     st.stop()
 
-today = date.today()
-
-st.markdown(
-    """
-    <style>
-    table { width: 100%; border-collapse: collapse; }
-    table thead th { background-color: #e5e7eb; color: #111827 !important; font-weight: 600; text-align: center; padding: 8px; border-bottom: 2px solid #9ca3af; }
-    table tbody td { text-align: center; padding: 8px; border-bottom: 1px solid #d1d5db; }
-    table tbody tr:hover { background-color: #f3f4f6; }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # ======================================================
-# FILTRAR POR SEMANA MÁS GRANDE
+# FILTRAR POR SEMANA MANUAL
 # ======================================================
-max_semana = max(p.get("semana", 0) for p in partidos)
-partidos_semana_max = [p for p in partidos if p.get("semana") == max_semana]
+partidos_semana = [
+    p for p in partidos
+    if p.get("semana") == SEMANA_ACTIVA
+]
 
-semana_nombre = WEEK_TITLES.get(max_semana, f"{max_semana}")
-st.subheader(f"{semana_nombre}")
+semana_nombre = WEEK_TITLES.get(SEMANA_ACTIVA, f"Semana {SEMANA_ACTIVA}")
+st.subheader(semana_nombre)
 
 # ======================================================
 # PARTIDOS FUTUROS
 # ======================================================
-futuros = [p for p in partidos_semana_max if not p.get("confirmed_result")]
+futuros = [p for p in partidos_semana if not p.get("confirmed_result")]
 
 data_futuros = []
 for p in futuros:
     fecha_db = p.get("fecha")
     estado_pred_raw = get_prediccion_status(USER_ID, p["id_partido"], fecha_db)
-    # En main.py predomina "Registrada" si existe predicción
+
     if estado_pred_raw == "🔴 Expirada":
-        supabase = get_supabase()
         existe_pred = (
             supabase
             .table("predicciones")
@@ -156,11 +148,7 @@ for p in futuros:
             .limit(1)
             .execute()
         )
-    
-        if existe_pred.data:
-            estado_pred = "🟢 Registrada"
-        else:
-            estado_pred = "🔴 Expirada"
+        estado_pred = "🟢 Registrada" if existe_pred.data else "🔴 Expirada"
     else:
         estado_pred = estado_pred_raw
 
@@ -178,13 +166,11 @@ for p in futuros:
         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
         "vs": "vs",
         "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else "",
-        #"Estado": p.get("status", "scheduled"),
         "Predicción": estado_pred
     })
 
 if data_futuros:
     df_futuros = pd.DataFrame(data_futuros)
-    #st.subheader("Próximos partidos")
     st.markdown(df_futuros.to_html(escape=False, index=False), unsafe_allow_html=True)
 else:
     st.info("No hay partidos próximos para esta semana")
@@ -192,15 +178,14 @@ else:
 # ======================================================
 # PARTIDOS PASADOS
 # ======================================================
-completados = [p for p in partidos_semana_max if p.get("confirmed_result")]
+completados = [p for p in partidos_semana if p.get("confirmed_result")]
 
 data_completados = []
 for p in completados:
     data_completados.append({
         "Local": f'<img src="{p.get("home_badge_url")}" width="40">' if p.get("home_badge_url") else "",
         "Resultado": f"{p.get('score_local', 0)} - {p.get('score_away', 0)}",
-        "Visitante": f'<img src="{p.get('away_badge_url')}" width="40">' if p.get("away_badge_url") else ""
-        #"Estado": p.get("status", "finished")
+        "Visitante": f'<img src="{p.get("away_badge_url")}" width="40">' if p.get("away_badge_url") else ""
     })
 
 if data_completados:
