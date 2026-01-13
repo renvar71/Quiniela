@@ -134,14 +134,12 @@ for p in partidos:
     else:
         pendientes.append(item)
 
+
 # -------------------------
 # UI
 # -------------------------
-if max_semana:
-    semana_nombre = WEEK_TITLES.get(max_semana, f"Semana {max_semana}")
-    st.title(f"📋 Partidos - {semana_nombre}")
-else:
-    st.title("📋 Partidos")
+st.title("📋 Partidos (última actualización)")
+
 
 col_pend, col_comp = st.columns(2)
 
