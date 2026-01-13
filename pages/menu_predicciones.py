@@ -75,11 +75,7 @@ partidos = st.session_state.partidos_cache
 # -------------------------
 # FILTRAR POR SEMANA MÁS ALTA
 # -------------------------
-if partidos:
-    max_semana = max(p.get("semana", 0) for p in partidos)
-    partidos = [p for p in partidos if p.get("semana") == max_semana]
-else:
-    max_semana = None
+max_semana = 125
 
 # -------------------------
 # SEPARAR PENDIENTES / COMPLETADOS
