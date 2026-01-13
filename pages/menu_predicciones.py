@@ -59,6 +59,7 @@ if "partidos_cache" not in st.session_state:
             id_partido,
             semana,
             fecha,
+            updated_at,
             local:equipos!partidos_equipo_local_id_fkey(nombre, badge_url),
             visitante:equipos!partidos_equipo_visitante_id_fkey(nombre, badge_url),
             home_badge_url,
@@ -73,9 +74,17 @@ if "partidos_cache" not in st.session_state:
 partidos = st.session_state.partidos_cache
 
 # -------------------------
-# FILTRAR POR SEMANA MÁS ALTA
+# FILTRAR POR UPDATED_AT MÁS RECIENTE
 # -------------------------
-max_semana = 125
+if partidos:
+    max_updated_at = max(p.get("updated_at") for p in partidos if p.get("updated_at"))
+    partidos = [
+        p for p in partidos
+        if p.get("updated_at") == max_updated_at
+    ]
+else:
+    max_updated_at = None
+
 
 # -------------------------
 # SEPARAR PENDIENTES / COMPLETADOS
