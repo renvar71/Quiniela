@@ -130,7 +130,11 @@ puntajes_resp = (
     .execute()
 )
 
-puntajes_df = pd.DataFrame(puntajes_resp.data) if puntajes_resp.data else pd.DataFrame()
+if puntajes_resp.data:
+    puntajes_df = pd.DataFrame(puntajes_resp.data)
+else:
+    puntajes_df = pd.DataFrame(columns=["usuario_id", "puntos"])
+
 
 # -------------------------
 # FETCH PREDICCIONES
