@@ -2,7 +2,7 @@
 import streamlit as st
 import pandas as pd
 from supabase_config import supabase
-from db import WEEK_TITLES
+from db import WEEK_TITLES, get_supabase
 from datetime import datetime, timezone
 from logic import calcular_ganador_nombre
 
@@ -16,6 +16,8 @@ if not st.session_state.get("logged_in"):
 user_id = st.session_state.get("user_id")
 if not user_id:
     st.stop()
+
+supabase = get_supabase()
 
 st.title("👥 Comparar Predicciones")
 
