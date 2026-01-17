@@ -31,16 +31,8 @@ equipos_dict = {e["team_id"]: e for e in equipos}
 partidos = get_partidos()
 predicciones_usuario = []
 
-def get_preguntas_por_partido(id_partido):
-    df = pd.read_csv("preguntas.csv")
-    preguntas = df["pregunta"].dropna().tolist()
-
-    random.seed(id_partido)
-    return random.sample(preguntas, 2)
-
-
 for partido in partidos:
-    
+
     resultado = get_resultado_admin(partido["id_partido"])
 
     if resultado:
@@ -54,16 +46,12 @@ for partido in partidos:
 
     equipo_local = equipos_dict.get(partido["equipo_local_id"], {})
     equipo_visitante = equipos_dict.get(partido["equipo_visitante_id"], {})
-    pregunta_1, pregunta_2 = get_preguntas_por_partido(partido["id_partido"])
-
 
     predicciones_usuario.append({
         **partido,
         **pred,
         "local": equipo_local.get("nombre", "Equipo local"),
         "visitante": equipo_visitante.get("nombre", "Equipo visitante"),
-        "pregunta_1": pregunta_1,
-        "pregunta_2": pregunta_2,
         "linea": linea
     })
 
@@ -146,23 +134,25 @@ for pred in predicciones_usuario:
         key=f"ou_{pred['id_partido']}"
     )
 
-    # PREGUNTAS EXTRA
+    # -------------------------
+    # PREGUNTAS EXTRA DINÁMICAS
+    # -------------------------
     st.markdown("**Preguntas extra:**")
 
-    st.radio(
-        pred["pregunta_1"],
-        [pred["local"], pred["visitante"]],
-        index=[pred["local"], pred["visitante"]].index(pred["extra_question_1"]),
-        disabled=True,
-        horizontal=True,
-        key=f"e1_{pred['id_partido']}"
-    )
+    # Tu tabla tiene 10 columnas posibles
+    for i in range(1, 11):
+        pregunta = pred.get(f"pregunta_{i}")
+        respuesta = pred.get(f"extra_question_{i}")
 
-    st.radio(
-        pred["pregunta_2"],
-        [pred["local"], pred["visitante"]],
-        index=[pred["local"], pred["visitante"]].index(pred["extra_question_2"]),
-        disabled=True,
-        horizontal=True,
-        key=f"e2_{pred['id_partido']}"
-    )
+        # Solo mostrar si fue utilizada
+        if not pregunta or not respuesta:
+            continue
+
+        st.radio(
+            pregunta,
+            [pred["local"], pred["visitante"]],
+            index=[pred["local"], pred["visitante"]].index(respuesta),
+            disabled=True,
+            horizontal=True,
+            key=f"e{i}_{pred['id_partido']}"
+        )
