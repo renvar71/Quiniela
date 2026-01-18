@@ -31,25 +31,24 @@ equipos_dict = {e["team_id"]: e for e in equipos}
 partidos = get_partidos()
 predicciones_usuario = []
 
+
+# 🔹 FUNCIÓN ORIGINAL PERO DINÁMICA
+def get_preguntas_por_partido(id_partido, cantidad):
+    df = pd.read_csv("preguntas.csv")
+    preguntas = df["pregunta"].dropna().tolist()
+
+    random.seed(id_partido)
+    return random.sample(preguntas, cantidad)
+
+
 for partido in partidos:
 
     resultado = get_resultado_admin(partido["id_partido"])
 
-    # 🔹 EXTRAER TEXTO DE PREGUNTAS DESDE RESULTADOS_ADMIN
-    preguntas_texto = {}
-
     if resultado:
-        r = resultado[0]
-
-        linea = r.get("linea", "N/A")
-
-        # Construimos diccionario de preguntas reales
-        for i in range(1, 11):
-            preguntas_texto[i] = r.get(f"pregunta{i}_resultado")
-
+        linea = resultado[0].get("linea")
     else:
         linea = "N/A"
-        preguntas_texto = {i: None for i in range(1, 11)}
 
     pred = get_prediccion_by_user(user_id, partido["id_partido"])
     if not pred:
@@ -58,13 +57,26 @@ for partido in partidos:
     equipo_local = equipos_dict.get(partido["equipo_local_id"], {})
     equipo_visitante = equipos_dict.get(partido["equipo_visitante_id"], {})
 
+    # 🔥 DETECTAR CUÁNTAS RESPONDIÓ
+    respuestas = []
+    for i in range(1, 11):
+        r = pred.get(f"extra_question_{i}")
+        if r:
+            respuestas.append(r)
+
+    cantidad = len(respuestas)
+
+    # 🔥 GENERAR MISMO NÚMERO DE PREGUNTAS
+    preguntas = get_preguntas_por_partido(partido["id_partido"], cantidad)
+
     predicciones_usuario.append({
         **partido,
         **pred,
         "local": equipo_local.get("nombre", "Equipo local"),
         "visitante": equipo_visitante.get("nombre", "Equipo visitante"),
-        "linea": linea,
-        "preguntas_texto": preguntas_texto
+        "preguntas": preguntas,
+        "respuestas": respuestas,
+        "linea": linea
     })
 
 
@@ -80,6 +92,7 @@ if not predicciones_usuario:
         st.switch_page("pages/menu_predicciones.py")
 
     st.stop()
+
 
 # -------------------------
 # LISTADO
@@ -142,21 +155,14 @@ for pred in predicciones_usuario:
     )
 
     # -------------------------
-    # 🔥 PREGUNTAS EXTRA REALES
+    # 🔥 PREGUNTAS DINÁMICAS
     # -------------------------
     st.markdown("**Preguntas extra:**")
 
-    for i in range(1, 11):
-
-        texto_pregunta = pred["preguntas_texto"].get(i)
-        respuesta = pred.get(f"extra_question_{i}")
-
-        # 👉 SOLO SI EXISTE TEXTO Y RESPUESTA
-        if not texto_pregunta or not respuesta:
-            continue
+    for i, (pregunta, respuesta) in enumerate(zip(pred["preguntas"], pred["respuestas"]), 1):
 
         st.radio(
-            texto_pregunta,
+            pregunta,
             [pred["local"], pred["visitante"]],
             index=[pred["local"], pred["visitante"]].index(respuesta),
             disabled=True,
