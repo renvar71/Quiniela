@@ -1,4 +1,3 @@
-# jugadores.py
 import streamlit as st
 import pandas as pd
 from supabase_config import supabase
@@ -113,13 +112,23 @@ res_admin = (
     supabase
     .table("resultados_admin")
     .select(
-        "o_u_resultado, pregunta1_resultado, pregunta2_resultado"
+        "o_u_resultado, pregunta1_resultado, pregunta2_resultado, pregunta3_resultado, pregunta4_resultado, pregunta5_resultado, pregunta6_resultado, pregunta7_resultado, pregunta8_resultado, pregunta9_resultado, pregunta10_resultado"
     )
     .eq("id_partido", partido_id)
     .execute()
 )
 
 resultados = res_admin.data[0] if res_admin.data else {}
+
+# -------------------------
+# DETECTAR PREGUNTAS EXTRAS ACTIVAS
+# -------------------------
+preguntas_activas = []
+
+for i in range(1, 11):
+    key = f"pregunta{i}_resultado"
+    if resultados.get(key) not in [None, ""]:
+        preguntas_activas.append(i)
 
 # -------------------------
 # FETCH PUNTAJES
@@ -137,7 +146,6 @@ if puntajes_resp.data:
 else:
     puntajes_df = pd.DataFrame(columns=["usuario_id", "puntos"])
 
-
 # -------------------------
 # FETCH PREDICCIONES
 # -------------------------
@@ -145,7 +153,7 @@ pred_resp = (
     supabase
     .table("predicciones")
     .select(
-        "usuario_id, score_local, score_away, pick, line_over_under, extra_question_1, extra_question_2"
+        "usuario_id, score_local, score_away, pick, line_over_under, extra_question_1, extra_question_2, extra_question_3, extra_question_4, extra_question_5, extra_question_6, extra_question_7, extra_question_8, extra_question_9, extra_question_10"
     )
     .eq("id_partido", partido_id)
     .execute()
@@ -178,16 +186,19 @@ user_map = {u["id"]: u["nombre"] for u in users_resp.data}
 pred_df["username"] = pred_df["usuario_id"].map(user_map)
 
 # -------------------------
-# FORMATEAR DF
+# FORMATEAR DF BASE
 # -------------------------
 df = pred_df.rename(columns={
     "score_local": "Marcador Local",
     "score_away": "Marcador Visitante",
     "pick": "Ganador",
     "line_over_under": "Linea",
-    "extra_question_1": "Pregunta Extra 1",
-    "extra_question_2": "Pregunta Extra 2"
 })
+
+for i in preguntas_activas:
+    df = df.rename(columns={
+        f"extra_question_{i}": f"Pregunta Extra {i}"
+    })
 
 # -------------------------
 # FILTRO JUGADORES
@@ -208,9 +219,23 @@ df = df[df["username"].isin(seleccionados)]
 # -------------------------
 df["_orden"] = df["Puntos"].apply(lambda x: -1 if x == "En juego" else x)
 df = df.sort_values("_orden", ascending=False).drop(columns="_orden")
-df = df.rename(columns={
-    "username": "Nombre"
-})
+df = df.rename(columns={"username": "Nombre"})
+
+# -------------------------
+# COLUMNAS DINÁMICAS
+# -------------------------
+columnas = [
+    "Nombre",
+    "Marcador Local",
+    "Marcador Visitante",
+    "Ganador",
+    "Linea",
+]
+
+for i in preguntas_activas:
+    columnas.append(f"Pregunta Extra {i}")
+
+columnas.append("Puntos")
 
 # -------------------------
 # STYLER
@@ -218,7 +243,6 @@ df = df.rename(columns={
 def style_row(row):
     styles = [""] * len(row)
 
-    # 🎯 Marcador exacto
     marcador_exacto = (
         partido["score_local"] is not None
         and partido["score_away"] is not None
@@ -227,24 +251,29 @@ def style_row(row):
     )
 
     for i, col in enumerate(row.index):
-        # 🥇 Dorado para marcador exacto
+
         if marcador_exacto and col in ["Marcador Local", "Marcador Visitante"]:
             styles[i] = "background-color: #f1c40f; color: black"
             continue
 
-        # ✅ Respuestas correctas (verde)
         col_map = {
             "Ganador": ganador_real,
             "Linea": resultados.get("o_u_resultado"),
-            "Pregunta Extra 1": resultados.get("pregunta1_resultado"),
-            "Pregunta Extra 2": resultados.get("pregunta2_resultado"),
         }
 
-        if col in col_map and col_map[col] is not None:
-            if row[col] == col_map[col]:
+        for n in preguntas_activas:
+            col_map[f"Pregunta Extra {n}"] = resultados.get(f"pregunta{n}_resultado")
+
+        if col in col_map:
+            resultado = col_map[col]
+
+            # 🔥 EMPATE SOLO PINTA ESA CELDA
+            if resultado == "Empate":
                 styles[i] = "background-color: #2ecc71; color: black"
 
-    # 👤 Usuario actual (azul si no tiene otro color)
+            elif resultado is not None and row[col] == resultado:
+                styles[i] = "background-color: #2ecc71; color: black"
+
     if df.loc[row.name, "usuario_id"] == user_id:
         styles = [
             s + "; background-color: #1f77b4; color: white"
@@ -256,22 +285,10 @@ def style_row(row):
     return styles
 
 
-styled_df = (
-    df[[
-        "Nombre",
-        "Marcador Local",
-        "Marcador Visitante",
-        "Ganador",
-        "Linea",
-        "Pregunta Extra 1",
-        "Pregunta Extra 2",
-        "Puntos"
-    ]]
-    .style
-    .apply(style_row, axis=1)
-)
+styled_df = df[columnas].style.apply(style_row, axis=1)
 
 st.caption(f"Comparando {len(df)} predicciones")
+
 st.markdown(
     """
     <div style="display:flex; gap:20px; margin-bottom:10px;">
