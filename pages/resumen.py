@@ -35,10 +35,21 @@ for partido in partidos:
 
     resultado = get_resultado_admin(partido["id_partido"])
 
+    # 🔹 EXTRAER TEXTO DE PREGUNTAS DESDE RESULTADOS_ADMIN
+    preguntas_texto = {}
+
     if resultado:
-        linea = resultado[0].get("linea")
+        r = resultado[0]
+
+        linea = r.get("linea", "N/A")
+
+        # Construimos diccionario de preguntas reales
+        for i in range(1, 11):
+            preguntas_texto[i] = r.get(f"pregunta{i}_resultado")
+
     else:
         linea = "N/A"
+        preguntas_texto = {i: None for i in range(1, 11)}
 
     pred = get_prediccion_by_user(user_id, partido["id_partido"])
     if not pred:
@@ -52,7 +63,8 @@ for partido in partidos:
         **pred,
         "local": equipo_local.get("nombre", "Equipo local"),
         "visitante": equipo_visitante.get("nombre", "Equipo visitante"),
-        "linea": linea
+        "linea": linea,
+        "preguntas_texto": preguntas_texto
     })
 
 
@@ -82,7 +94,6 @@ for pred in predicciones_usuario:
 
     col1, col2, col3, col4, col5 = st.columns([2, 1, 2, 1, 2])
 
-    # LOGO LOCAL
     with col1:
         if pred.get("home_badge_url"):
             st.markdown(
@@ -92,7 +103,6 @@ for pred in predicciones_usuario:
                 unsafe_allow_html=True
             )
 
-    # SCORE LOCAL
     with col2:
         st.number_input(
             "",
@@ -101,11 +111,9 @@ for pred in predicciones_usuario:
             key=f"sl_{pred['id_partido']}"
         )
 
-    # VS
     with col3:
         st.markdown("<h3 style='text-align:center'>vs</h3>", unsafe_allow_html=True)
 
-    # SCORE VISITANTE
     with col4:
         st.number_input(
             "",
@@ -114,7 +122,6 @@ for pred in predicciones_usuario:
             key=f"sa_{pred['id_partido']}"
         )
 
-    # LOGO VISITANTE
     with col5:
         if pred.get("away_badge_url"):
             st.markdown(
@@ -135,21 +142,21 @@ for pred in predicciones_usuario:
     )
 
     # -------------------------
-    # PREGUNTAS EXTRA DINÁMICAS
+    # 🔥 PREGUNTAS EXTRA REALES
     # -------------------------
     st.markdown("**Preguntas extra:**")
 
-    # Tu tabla tiene 10 columnas posibles
     for i in range(1, 11):
-        pregunta = pred.get(f"pregunta_{i}")
+
+        texto_pregunta = pred["preguntas_texto"].get(i)
         respuesta = pred.get(f"extra_question_{i}")
 
-        # Solo mostrar si fue utilizada
-        if not pregunta or not respuesta:
+        # 👉 SOLO SI EXISTE TEXTO Y RESPUESTA
+        if not texto_pregunta or not respuesta:
             continue
 
         st.radio(
-            pregunta,
+            texto_pregunta,
             [pred["local"], pred["visitante"]],
             index=[pred["local"], pred["visitante"]].index(respuesta),
             disabled=True,
