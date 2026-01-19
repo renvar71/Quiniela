@@ -10,7 +10,8 @@ from db import (
 # -------------------------
 # CONFIG MANUAL
 # -------------------------
-SEMANA_ACTIVA = 125
+SEMANA_ACTIVA = 150
+
 
 # -------------------------
 # SESSION CHECK
