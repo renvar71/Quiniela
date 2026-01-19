@@ -101,10 +101,10 @@ def cargar_partidos():
         except Exception as e:
             st.error(f"Error cargando partidos {tipo}: {e}")
 
-# PATCH CONTRA RERUNS
-if "partidos_sync" not in st.session_state:
+# Sincronizar siempre que cambie la semana activa
+if st.session_state.get("ultima_semana_cargada") != SEMANA_ACTIVA:
     cargar_partidos()
-    st.session_state.partidos_sync = True
+    st.session_state.ultima_semana_cargada = SEMANA_ACTIVA
 
 # ======================================================
 # OBTENER PARTIDOS
