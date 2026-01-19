@@ -13,7 +13,7 @@ LEAGUE_ID = "4391"  # NFL
 API_KEY = 609380
 API_URL = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookupleague.php"
 
-SEMANA_ACTIVA = 125
+SEMANA_ACTIVA = 150
 
 st.set_page_config(page_title="🏈 QUINIELA NFL 🏈", layout="wide")
 
