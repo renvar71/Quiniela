@@ -19,7 +19,7 @@ Cuenta de Aportacion:
 - Banco: Banorte
 - Cuenta: 1112362358
 - Numero de tarjeta: 4189140052787990
-- Clabe: 0721180011123623586
+- Clabe: 072118001123623586
 
 ---
 
